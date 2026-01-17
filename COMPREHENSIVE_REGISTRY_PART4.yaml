@@ -1,0 +1,2155 @@
+# =============================================================================
+# COMPREHENSIVE PLATFORM FIELD REGISTRY V2.0 - PART 4 OF 5
+# =============================================================================
+# Generated: 2025-01-08
+# Source Files: hard_objection_mix.yaml, cross_sell_engine.py, cross_sell_rules.py,
+#               signals.yaml, outcomes.yaml, OBJECTION_HANDLING_ENHANCEMENT_SUMMARY.md
+#
+# This file contains:
+# - Objection Categories (10 categories, 31 sub-types)
+# - Life Events & Signals Configuration
+# - Cross-Sell Configuration (detailed rules)
+# - Cross-Industry Referral Configuration
+# - Callback Scenarios & Service Requests
+# - Outcomes & Dispositions (detailed)
+# =============================================================================
+
+# =============================================================================
+# OBJECTION HANDLING CONFIGURATION
+# =============================================================================
+
+objection_handling:
+  source: "hard_objection_mix.yaml, OBJECTION_HANDLING_ENHANCEMENT_SUMMARY.md"
+  
+  global_settings:
+    max_recovery_attempts_default: 2
+    max_recovery_attempts_hard_rejection: 0
+    cool_down_after_hard_rejection_days: 90
+    escalation_after_failed_recoveries: true
+    
+  # ---------------------------------------------------------------------------
+  # CATEGORY 1: PRICE/BUDGET OBJECTIONS
+  # ---------------------------------------------------------------------------
+  price_budget:
+    category_id: "price_budget"
+    display_name: "Price/Budget"
+    description: "Customer concerns about cost, affordability, or value for money"
+    frequency_in_training: "20%"
+    difficulty: "hard"
+    
+    sub_types:
+      - id: "too_expensive"
+        display_name: "Too Expensive"
+        description: "General complaint about price being too high"
+        
+        indicators:
+          exact_phrases:
+            - "too expensive"
+            - "too much"
+            - "can't afford"
+            - "out of my budget"
+            - "costs too much"
+            - "way too pricey"
+            - "that's ridiculous"
+            - "you've got to be kidding"
+          patterns:
+            - "\\$\\d+.*too (much|high|expensive)"
+            - "can't (afford|pay|swing)"
+            - "more than I (expected|thought|wanted)"
+            
+        response_strategies:
+          primary: "value_reframe"
+          sequence:
+            1:
+              name: "Acknowledge and Validate"
+              example: "I completely understand - price is important. Let me make sure you're seeing the full picture of what's included."
+              
+            2:
+              name: "Break Down Value"
+              example: "When you factor in [coverage A], [coverage B], and [coverage C], you're actually getting more protection per dollar than many alternatives."
+              
+            3:
+              name: "Cost of Not Having"
+              example: "Consider this: without adequate coverage, a single incident could cost you [X amount] out of pocket."
+              
+            4:
+              name: "Alternative Options"
+              example: "If budget is the primary concern, I can have ${user.display_name} look at adjusting some coverage levels to find a better fit."
+              
+        max_recovery_attempts: 2
+        escalation_trigger: "after_2_failed_attempts"
+        
+      - id: "competitor_cheaper"
+        display_name: "Competitor is Cheaper"
+        description: "Customer has a lower quote from a competitor"
+        
+        indicators:
+          exact_phrases:
+            - "got a better quote"
+            - "cheaper elsewhere"
+            - "X company is less"
+            - "found it for less"
+            - "$40 cheaper"
+            - "$50 more than"
+            - "better deal at"
+            - "competitor offered"
+          patterns:
+            - "(\\w+) (is|was|quoted) (\\$?\\d+|cheaper|less)"
+            - "got (a |)(quote|price) (for|of|at)"
+            
+        response_strategies:
+          primary: "differentiation"
+          sequence:
+            1:
+              name: "Acknowledge Competition"
+              example: "I appreciate you sharing that - it's smart to compare. Can I ask what that quote includes?"
+              
+            2:
+              name: "Apples to Apples"
+              example: "Sometimes quotes look similar but have different coverage levels or deductibles. Let's make sure we're comparing the same thing."
+              
+            3:
+              name: "Highlight Differentiators"
+              example: "What sets us apart is [specific differentiator] - many customers find that worth the difference."
+              
+            4:
+              name: "Service Value"
+              example: "Beyond price, ${user.display_name} provides [service benefit] that you won't get with a call center."
+              
+        max_recovery_attempts: 2
+        competitive_intelligence: true
+        
+      - id: "not_in_budget"
+        display_name: "Not in Budget"
+        description: "Customer indicates they haven't allocated funds"
+        
+        indicators:
+          exact_phrases:
+            - "not in my budget"
+            - "budget is tight"
+            - "trying to save money"
+            - "cutting costs"
+            - "not budgeted for this"
+            - "didn't plan for this expense"
+            
+        response_strategies:
+          primary: "flexible_options"
+          sequence:
+            1:
+              name: "Understand Budget"
+              example: "I hear you - budgets are real. Is there a range you had in mind that would work better?"
+              
+            2:
+              name: "Flexible Payment"
+              example: "We offer monthly payment options that might spread this out more comfortably."
+              
+            3:
+              name: "Prioritize Coverage"
+              example: "We could start with essential coverage now and add more protection as budget allows."
+              
+        max_recovery_attempts: 2
+        offer_payment_plans: true
+        
+      - id: "need_to_check_finances"
+        display_name: "Need to Check Finances"
+        description: "Customer wants to review their financial situation"
+        
+        indicators:
+          exact_phrases:
+            - "check my finances"
+            - "look at my budget"
+            - "see what I can afford"
+            - "need to run some numbers"
+            - "check my bank account"
+            
+        response_strategies:
+          primary: "schedule_follow_up"
+          sequence:
+            1:
+              name: "Validate Prudence"
+              example: "That's really smart - it's important to make informed decisions."
+              
+            2:
+              name: "Provide Summary"
+              example: "Let me send you a summary of what we discussed so you have all the details."
+              
+            3:
+              name: "Schedule Follow-up"
+              example: "When would be a good time to reconnect once you've had a chance to review?"
+              
+        max_recovery_attempts: 1
+        follow_up_required: true
+
+  # ---------------------------------------------------------------------------
+  # CATEGORY 2: TIMING OBJECTIONS
+  # ---------------------------------------------------------------------------
+  timing:
+    category_id: "timing"
+    display_name: "Timing"
+    description: "Customer concerns about when to make a decision or take action"
+    frequency_in_training: "15%"
+    difficulty: "medium"
+    
+    sub_types:
+      - id: "not_right_now"
+        display_name: "Not the Right Time"
+        description: "Customer says now isn't a good time"
+        
+        indicators:
+          exact_phrases:
+            - "not right now"
+            - "bad timing"
+            - "not a good time"
+            - "busy right now"
+            - "too much going on"
+            - "call me back later"
+            - "can't deal with this now"
+            
+        response_strategies:
+          primary: "schedule_better_time"
+          sequence:
+            1:
+              name: "Respect Their Time"
+              example: "I completely understand - I don't want to catch you at a bad time."
+              
+            2:
+              name: "Quick Value Statement"
+              example: "Just so you know what you might be missing - this could save you [benefit]. But your time is important."
+              
+            3:
+              name: "Schedule Alternative"
+              example: "When would be a better time to connect? I'm happy to call back at your convenience."
+              
+        max_recovery_attempts: 1
+        always_offer_callback: true
+        
+      - id: "just_renewed"
+        display_name: "Just Renewed"
+        description: "Customer recently renewed their current policy"
+        
+        indicators:
+          exact_phrases:
+            - "just renewed"
+            - "renewed recently"
+            - "policy just started"
+            - "renewed last month"
+            - "just signed up"
+            - "locked in for another year"
+            
+        response_strategies:
+          primary: "future_planning"
+          sequence:
+            1:
+              name: "Acknowledge Commitment"
+              example: "I understand - you've already made that commitment for now."
+              
+            2:
+              name: "Offer Future Value"
+              example: "What I can do is get your information on file so we're ready with a competitive quote before your next renewal."
+              
+            3:
+              name: "Early Quote Benefit"
+              example: "Many customers like to have their options ready 30-60 days before renewal. Should I reach out then?"
+              
+        max_recovery_attempts: 1
+        set_future_follow_up: true
+        follow_up_timing: "30_days_before_renewal"
+        
+      - id: "expiring_later"
+        display_name: "Policy Expires Later"
+        description: "Current policy doesn't expire for several months"
+        
+        indicators:
+          exact_phrases:
+            - "expires later"
+            - "not due yet"
+            - "several months left"
+            - "6 months left"
+            - "doesn't expire until"
+            - "have time"
+            
+        response_strategies:
+          primary: "early_quote_benefit"
+          sequence:
+            1:
+              name: "Validate Timeline"
+              example: "That makes sense - you've got some time."
+              
+            2:
+              name: "Early Planning Benefits"
+              example: "Actually, getting a quote now has some advantages - rates can change, and having options early means no pressure later."
+              
+            3:
+              name: "Lock in Rate"
+              example: "If we find you a great rate, some carriers let us lock it in for up to 60 days."
+              
+        max_recovery_attempts: 2
+        create_early_value: true
+        
+      - id: "need_more_time"
+        display_name: "Need Time to Think"
+        description: "Customer wants to consider before deciding"
+        
+        indicators:
+          exact_phrases:
+            - "need to think about it"
+            - "let me consider"
+            - "sleep on it"
+            - "get back to you"
+            - "in a few weeks"
+            - "need some time"
+            - "not ready to decide"
+            - "want to mull it over"
+            
+        response_strategies:
+          primary: "create_urgency_softly"
+          sequence:
+            1:
+              name: "Respect Decision Process"
+              example: "Absolutely - it's an important decision and you should feel confident."
+              
+            2:
+              name: "Understand Concerns"
+              example: "Is there something specific you're weighing, or just want to sit with it?"
+              
+            3:
+              name: "Soft Urgency"
+              example: "I totally understand. Just so you know, this rate is guaranteed until [date]."
+              
+            4:
+              name: "Make Follow-up Easy"
+              example: "I'll send you everything we discussed. What day works for a quick follow-up call?"
+              
+        max_recovery_attempts: 2
+        provide_summary: true
+        schedule_follow_up: true
+
+  # ---------------------------------------------------------------------------
+  # CATEGORY 3: AUTHORITY/DECISION MAKING OBJECTIONS
+  # ---------------------------------------------------------------------------
+  authority_decision:
+    category_id: "authority_decision"
+    display_name: "Authority/Decision Making"
+    description: "Customer isn't the sole decision maker"
+    frequency_in_training: "12%"
+    difficulty: "medium"
+    
+    sub_types:
+      - id: "spouse_partner"
+        display_name: "Need to Talk to Spouse/Partner"
+        description: "Customer needs to consult with their partner"
+        
+        indicators:
+          exact_phrases:
+            - "talk to my spouse"
+            - "check with my partner"
+            - "my husband"
+            - "my wife"
+            - "my partner handles"
+            - "we make decisions together"
+            - "need to discuss with"
+            - "my spouse said"
+            
+        response_strategies:
+          primary: "include_decision_maker"
+          sequence:
+            1:
+              name: "Respect Dynamic"
+              example: "That makes total sense - it's great that you make these decisions together."
+              
+            2:
+              name: "Offer to Include"
+              example: "Would it be helpful if I joined a call with both of you? That way I can answer any questions directly."
+              
+            3:
+              name: "Equip the Advocate"
+              example: "Let me give you the key points to share - what do you think will be most important to them?"
+              
+            4:
+              name: "Schedule Three-Way"
+              example: "When would be a good time for all three of us to connect?"
+              
+        max_recovery_attempts: 2
+        offer_joint_call: true
+        provide_summary_materials: true
+        
+      - id: "someone_else_decides"
+        display_name: "Someone Else Decides"
+        description: "Another person is the actual decision maker"
+        
+        indicators:
+          exact_phrases:
+            - "someone else decides"
+            - "not my decision"
+            - "need approval"
+            - "have to ask"
+            - "not up to me"
+            - "my [parent/boss/etc] handles this"
+            
+        response_strategies:
+          primary: "identify_decision_maker"
+          sequence:
+            1:
+              name: "Identify Decision Maker"
+              example: "I understand - who would be the best person to speak with about this?"
+              
+            2:
+              name: "Offer Introduction"
+              example: "Would you be able to introduce me, or would you prefer I reach out directly?"
+              
+            3:
+              name: "Provide Materials"
+              example: "I can put together a summary for them. What do you think would be most important to include?"
+              
+        max_recovery_attempts: 1
+        attempt_warm_handoff: true
+        
+      - id: "committee_board"
+        display_name: "Committee/Board Decision"
+        description: "Decision requires committee or board approval"
+        
+        indicators:
+          exact_phrases:
+            - "board approval"
+            - "committee"
+            - "multiple stakeholders"
+            - "need consensus"
+            - "group decision"
+            - "leadership team"
+            
+        response_strategies:
+          primary: "provide_materials"
+          sequence:
+            1:
+              name: "Understand Process"
+              example: "I understand - can you tell me about the approval process and timeline?"
+              
+            2:
+              name: "Offer Support"
+              example: "I can prepare materials for your presentation. What format works best?"
+              
+            3:
+              name: "Champion Building"
+              example: "What would make you feel confident recommending this to the group?"
+              
+        max_recovery_attempts: 2
+        enterprise_sales_track: true
+
+  # ---------------------------------------------------------------------------
+  # CATEGORY 4: TRUST/CREDIBILITY OBJECTIONS
+  # ---------------------------------------------------------------------------
+  trust_credibility:
+    category_id: "trust_credibility"
+    display_name: "Trust/Credibility"
+    description: "Customer has concerns about trustworthiness"
+    frequency_in_training: "10%"
+    difficulty: "hard"
+    
+    sub_types:
+      - id: "never_heard_of_you"
+        display_name: "Never Heard of You"
+        description: "Customer doesn't know the company"
+        
+        indicators:
+          exact_phrases:
+            - "never heard of"
+            - "don't know your company"
+            - "who are you"
+            - "never heard of this company"
+            - "is this legitimate"
+            - "how do I know you're real"
+            - "are you a scam"
+            
+        response_strategies:
+          primary: "establish_credibility"
+          sequence:
+            1:
+              name: "Validate Caution"
+              example: "That's a fair question - you should always know who you're dealing with."
+              
+            2:
+              name: "Establish Credentials"
+              example: "${company.name} has been serving customers in ${location} for ${years_in_business} years. We're licensed by [regulatory body]."
+              
+            3:
+              name: "Provide Verification"
+              example: "You can verify our license at [website]. We also have reviews on Google and Better Business Bureau."
+              
+            4:
+              name: "Personal Touch"
+              example: "${user.display_name} has helped over [X] families in your area. I'd be happy to share some references."
+              
+        max_recovery_attempts: 2
+        provide_verification_links: true
+        
+      - id: "bad_experience_industry"
+        display_name: "Bad Industry Experience"
+        description: "Customer had negative experiences with similar companies"
+        
+        indicators:
+          exact_phrases:
+            - "bad experience"
+            - "burned before"
+            - "don't trust"
+            - "all the same"
+            - "insurance companies are scams"
+            - "you're all alike"
+            - "been lied to before"
+            - "doesn't matter which company"
+            
+        response_strategies:
+          primary: "differentiate_acknowledge"
+          sequence:
+            1:
+              name: "Acknowledge Experience"
+              example: "I'm really sorry to hear that - unfortunately, not everyone in this industry operates the way they should."
+              
+            2:
+              name: "Differentiate"
+              example: "That's actually why ${user.display_name} got into this business - to do things differently."
+              
+            3:
+              name: "Demonstrate Difference"
+              example: "Here's how we're different: [specific differentiators]. But I understand if you need to see it to believe it."
+              
+            4:
+              name: "Offer Proof"
+              example: "Would it help to hear from some of our long-term clients about their experience?"
+              
+        max_recovery_attempts: 2
+        empathy_critical: true
+        
+      - id: "want_references"
+        display_name: "Want References"
+        description: "Customer wants to verify through others"
+        
+        indicators:
+          exact_phrases:
+            - "want references"
+            - "testimonials"
+            - "reviews"
+            - "other customers"
+            - "anyone I can talk to"
+            - "proof"
+            - "show me"
+            
+        response_strategies:
+          primary: "provide_social_proof"
+          sequence:
+            1:
+              name: "Welcome Request"
+              example: "Absolutely - I think that's smart. Let me share some options."
+              
+            2:
+              name: "Multiple Proof Points"
+              example: "We have reviews on Google, testimonials on our website, and I can connect you with clients who've agreed to be references."
+              
+            3:
+              name: "Relevant Reference"
+              example: "Let me find someone in a similar situation to yours - would that be helpful?"
+              
+        max_recovery_attempts: 1
+        have_references_ready: true
+
+  # ---------------------------------------------------------------------------
+  # CATEGORY 5: NEED/VALUE OBJECTIONS
+  # ---------------------------------------------------------------------------
+  need_value:
+    category_id: "need_value"
+    display_name: "Need/Value"
+    description: "Customer doesn't see the need or value"
+    frequency_in_training: "10%"
+    difficulty: "medium"
+    
+    sub_types:
+      - id: "dont_need_it"
+        display_name: "Don't Need It"
+        description: "Customer doesn't perceive a need"
+        
+        indicators:
+          exact_phrases:
+            - "don't need"
+            - "not necessary"
+            - "getting by without"
+            - "seems like overkill"
+            - "never needed it before"
+            - "waste of money"
+            
+        response_strategies:
+          primary: "uncover_hidden_need"
+          sequence:
+            1:
+              name: "Explore Situation"
+              example: "I hear you - can I ask what's making you feel that way?"
+              
+            2:
+              name: "Scenario Question"
+              example: "What would happen if [relevant scenario]? How would you handle that?"
+              
+            3:
+              name: "Cost of Risk"
+              example: "The thing is, most people don't think they need it... until they do. Then it becomes very expensive very quickly."
+              
+        max_recovery_attempts: 2
+        use_scenario_selling: true
+        
+      - id: "happy_with_current"
+        display_name: "Happy with Current"
+        description: "Customer satisfied with existing solution"
+        
+        indicators:
+          exact_phrases:
+            - "happy with current"
+            - "satisfied"
+            - "works fine"
+            - "no issues"
+            - "never had a problem"
+            - "why would I change"
+            - "if it ain't broke"
+            
+        response_strategies:
+          primary: "explore_improvement"
+          sequence:
+            1:
+              name: "Validate Satisfaction"
+              example: "That's great to hear - sounds like you found something that works."
+              
+            2:
+              name: "Curiosity Question"
+              example: "Out of curiosity, when's the last time you compared options? Just to make sure you're still getting the best deal?"
+              
+            3:
+              name: "Enhancement Angle"
+              example: "Even happy customers sometimes find they can get more coverage for less. Would it hurt to at least see?"
+              
+        max_recovery_attempts: 2
+        competitive_comparison: true
+        
+      - id: "dont_see_value"
+        display_name: "Don't See the Value"
+        description: "Customer doesn't understand the value proposition"
+        
+        indicators:
+          exact_phrases:
+            - "don't see value"
+            - "what's the point"
+            - "why would I"
+            - "not worth it"
+            - "what do I get"
+            - "don't understand why"
+            
+        response_strategies:
+          primary: "demonstrate_value"
+          sequence:
+            1:
+              name: "Clarify Value"
+              example: "Let me make sure I'm explaining this clearly - here's exactly what you get..."
+              
+            2:
+              name: "Quantify"
+              example: "In real terms, this means [specific benefit] which could save you [amount] or protect you from [risk]."
+              
+            3:
+              name: "Compare Alternatives"
+              example: "Without this, here's what you'd be facing: [alternative scenario]."
+              
+        max_recovery_attempts: 2
+        use_value_selling: true
+
+  # ---------------------------------------------------------------------------
+  # CATEGORY 6: COMPETITOR OBJECTIONS
+  # ---------------------------------------------------------------------------
+  competitor:
+    category_id: "competitor"
+    display_name: "Competitor"
+    description: "Customer is considering or using a competitor"
+    frequency_in_training: "8%"
+    difficulty: "medium"
+    
+    sub_types:
+      - id: "using_competitor"
+        display_name: "Using Competitor"
+        description: "Customer currently uses a competitor"
+        
+        indicators:
+          exact_phrases:
+            - "using X"
+            - "with X already"
+            - "have X"
+            - "already have coverage"
+            - "use another company"
+            
+        response_strategies:
+          primary: "competitive_positioning"
+          sequence:
+            1:
+              name: "Respect Choice"
+              example: "[Competitor] is a fine company - there's a reason they're popular."
+              
+            2:
+              name: "Differentiate"
+              example: "Where we tend to stand out is [differentiator]. Is that something important to you?"
+              
+            3:
+              name: "Offer Comparison"
+              example: "Would it be worth taking 5 minutes to see how we compare? No obligation."
+              
+        max_recovery_attempts: 2
+        know_competitors: true
+        
+      - id: "loyal_to_competitor"
+        display_name: "Loyal to Competitor"
+        description: "Customer has strong loyalty to current provider"
+        
+        indicators:
+          exact_phrases:
+            - "loyal to"
+            - "been with them for years"
+            - "like X"
+            - "trust them"
+            - "always used"
+            - "family has always used"
+            
+        response_strategies:
+          primary: "respectful_comparison"
+          sequence:
+            1:
+              name: "Honor Loyalty"
+              example: "I respect that - loyalty is important and it sounds like they've earned yours."
+              
+            2:
+              name: "Plant Seed"
+              example: "The only thing I'd say is that loyalty should go both ways. Are they still giving you their best?"
+              
+            3:
+              name: "Offer Backup"
+              example: "Even if you stay with them, it never hurts to have a backup option. At least you'd know."
+              
+        max_recovery_attempts: 1
+        long_term_nurture: true
+        
+      - id: "competitor_recommended"
+        display_name: "Competitor Recommended"
+        description: "Someone recommended a competitor"
+        
+        indicators:
+          exact_phrases:
+            - "friend recommended"
+            - "was told to use"
+            - "everyone uses"
+            - "family uses"
+            - "heard good things about"
+            
+        response_strategies:
+          primary: "alternative_perspective"
+          sequence:
+            1:
+              name: "Acknowledge Recommendation"
+              example: "Personal recommendations are valuable - your friend is looking out for you."
+              
+            2:
+              name: "Add Perspective"
+              example: "What works for one person doesn't always work for another though. Your situation might be different."
+              
+            3:
+              name: "Offer Both"
+              example: "Why not get quotes from both and see which actually works better for you?"
+              
+        max_recovery_attempts: 2
+
+  # ---------------------------------------------------------------------------
+  # CATEGORY 7: HASSLE/EFFORT OBJECTIONS
+  # ---------------------------------------------------------------------------
+  hassle_effort:
+    category_id: "hassle_effort"
+    display_name: "Hassle/Effort"
+    description: "Customer concerned about effort required"
+    frequency_in_training: "8%"
+    difficulty: "medium"
+    
+    sub_types:
+      - id: "too_much_work"
+        display_name: "Too Much Work"
+        description: "Customer thinks the process is too difficult"
+        
+        indicators:
+          exact_phrases:
+            - "too much work"
+            - "hassle"
+            - "complicated"
+            - "too much effort"
+            - "don't want to deal with"
+            - "sounds like a lot"
+            - "too many steps"
+            
+        response_strategies:
+          primary: "simplify_process"
+          sequence:
+            1:
+              name: "Acknowledge Concern"
+              example: "I totally get it - nobody wants more hassle in their life."
+              
+            2:
+              name: "Simplify"
+              example: "Here's the good news - I handle most of the work. All I need from you is [minimal requirements]."
+              
+            3:
+              name: "Time Estimate"
+              example: "The whole process takes about [X] minutes. That's it."
+              
+        max_recovery_attempts: 2
+        emphasize_simplicity: true
+        
+      - id: "paperwork"
+        display_name: "Paperwork Concerns"
+        description: "Customer worried about documentation requirements"
+        
+        indicators:
+          exact_phrases:
+            - "paperwork"
+            - "forms"
+            - "documentation"
+            - "phone calls"
+            - "too many documents"
+            - "hate paperwork"
+            
+        response_strategies:
+          primary: "minimize_effort"
+          sequence:
+            1:
+              name: "Minimize Perception"
+              example: "I hear you - paperwork is the worst. We've actually streamlined everything."
+              
+            2:
+              name: "Digital Options"
+              example: "Everything can be done electronically - e-signatures, digital documents. No printing required."
+              
+            3:
+              name: "Support Offer"
+              example: "And I'm here to help with anything that's confusing. You won't be left figuring it out alone."
+              
+        max_recovery_attempts: 2
+        offer_digital_process: true
+        
+      - id: "switching_costs"
+        display_name: "Switching Concerns"
+        description: "Customer worried about switching from current provider"
+        
+        indicators:
+          exact_phrases:
+            - "switching is hard"
+            - "don't want to switch"
+            - "too much change"
+            - "not worth the hassle"
+            - "already set up"
+            - "don't want to start over"
+            
+        response_strategies:
+          primary: "handle_transition"
+          sequence:
+            1:
+              name: "Acknowledge Friction"
+              example: "I understand - switching anything feels like a hassle, even when it's worth it."
+              
+            2:
+              name: "We Handle It"
+              example: "Here's what we do: we coordinate the transition so there's no gap in coverage and no double payments."
+              
+            3:
+              name: "Easy Cancellation"
+              example: "We even help you cancel your old policy properly. All you have to do is say yes."
+              
+        max_recovery_attempts: 2
+        offer_transition_support: true
+
+  # ---------------------------------------------------------------------------
+  # CATEGORY 8: INFORMATION/RESEARCH OBJECTIONS
+  # ---------------------------------------------------------------------------
+  information:
+    category_id: "information"
+    display_name: "Information/Research"
+    description: "Customer wants more information before deciding"
+    frequency_in_training: "7%"
+    difficulty: "easy"
+    
+    sub_types:
+      - id: "need_more_info"
+        display_name: "Need More Information"
+        description: "Customer wants to learn more"
+        
+        indicators:
+          exact_phrases:
+            - "need more information"
+            - "want to learn more"
+            - "researching"
+            - "doing my homework"
+            - "don't know enough"
+            
+        response_strategies:
+          primary: "provide_information"
+          sequence:
+            1:
+              name: "Welcome Interest"
+              example: "Of course - being informed is important. What specific questions can I answer?"
+              
+            2:
+              name: "Provide Resources"
+              example: "I can send you [materials]. What format works best - email, text?"
+              
+            3:
+              name: "Stay Engaged"
+              example: "After you review that, let's reconnect so I can address any other questions."
+              
+        max_recovery_attempts: 1
+        nurture_track: true
+        
+      - id: "want_to_compare"
+        display_name: "Want to Compare"
+        description: "Customer shopping around"
+        
+        indicators:
+          exact_phrases:
+            - "want to compare"
+            - "shopping around"
+            - "looking at options"
+            - "getting multiple quotes"
+            - "seeing what's out there"
+            
+        response_strategies:
+          primary: "encourage_comparison"
+          sequence:
+            1:
+              name: "Support Comparison"
+              example: "That's smart - you should compare. I'm confident we'll stack up well."
+              
+            2:
+              name: "Be the Standard"
+              example: "Use our quote as a benchmark. Here's what to look for when comparing: [key factors]."
+              
+            3:
+              name: "Stay Top of Mind"
+              example: "When you've gathered your options, let's review them together. I can help you compare apples to apples."
+              
+        max_recovery_attempts: 2
+        position_as_advisor: true
+        
+      - id: "too_early"
+        display_name: "Too Early in Process"
+        description: "Customer just starting research"
+        
+        indicators:
+          exact_phrases:
+            - "too early"
+            - "just starting"
+            - "early stages"
+            - "not ready yet"
+            - "preliminary research"
+            - "just looking"
+            
+        response_strategies:
+          primary: "nurture"
+          sequence:
+            1:
+              name: "Meet Them Where They Are"
+              example: "Totally fine - it's smart to start early. No pressure from me."
+              
+            2:
+              name: "Offer Value"
+              example: "Can I at least share some things to think about as you research? No sales pitch."
+              
+            3:
+              name: "Stay Connected"
+              example: "When you're ready to get serious, I'm here. Can I check back in a few weeks?"
+              
+        max_recovery_attempts: 1
+        long_term_nurture: true
+
+  # ---------------------------------------------------------------------------
+  # CATEGORY 9: RISK/FEAR OBJECTIONS
+  # ---------------------------------------------------------------------------
+  risk_fear:
+    category_id: "risk_fear"
+    display_name: "Risk/Fear"
+    description: "Customer has fears or risk concerns"
+    frequency_in_training: "5%"
+    difficulty: "medium"
+    
+    sub_types:
+      - id: "fear_of_change"
+        display_name: "Fear of Change"
+        description: "Customer afraid of making a change"
+        
+        indicators:
+          exact_phrases:
+            - "afraid of change"
+            - "what if it doesn't work"
+            - "risky"
+            - "nervous about switching"
+            - "worried about"
+            - "what if something goes wrong"
+            
+        response_strategies:
+          primary: "reduce_risk"
+          sequence:
+            1:
+              name: "Validate Fear"
+              example: "Change can feel risky - I understand wanting to stick with what you know."
+              
+            2:
+              name: "Minimize Risk"
+              example: "Here's how we reduce that risk: [specific safeguards]."
+              
+            3:
+              name: "Reversal Option"
+              example: "And if for any reason it doesn't work out, here's what we can do: [backup plan]."
+              
+        max_recovery_attempts: 2
+        offer_guarantees: true
+        
+      - id: "commitment_fear"
+        display_name: "Fear of Commitment"
+        description: "Customer afraid of being locked in"
+        
+        indicators:
+          exact_phrases:
+            - "don't want to commit"
+            - "locked in"
+            - "trapped"
+            - "stuck with"
+            - "long-term contract"
+            - "what if I change my mind"
+            
+        response_strategies:
+          primary: "flexibility_options"
+          sequence:
+            1:
+              name: "Understand Concern"
+              example: "Nobody wants to feel stuck. What specifically concerns you about committing?"
+              
+            2:
+              name: "Highlight Flexibility"
+              example: "Our policies aren't set in stone. You can [make changes/cancel] with [terms]."
+              
+            3:
+              name: "Trial Approach"
+              example: "Why not start and see how it goes? You're not signing your life away."
+              
+        max_recovery_attempts: 2
+        emphasize_flexibility: true
+        
+      - id: "past_bad_experience"
+        display_name: "Past Bad Experience"
+        description: "Customer burned before"
+        
+        indicators:
+          exact_phrases:
+            - "had bad experience"
+            - "burned before"
+            - "didn't work last time"
+            - "tried that before"
+            - "won't make that mistake again"
+            
+        response_strategies:
+          primary: "address_past"
+          sequence:
+            1:
+              name: "Empathize"
+              example: "I'm sorry that happened - bad experiences stick with us."
+              
+            2:
+              name: "Understand Specifics"
+              example: "Can you tell me what went wrong? I want to make sure we don't repeat that."
+              
+            3:
+              name: "Differentiate"
+              example: "Here's specifically how we prevent that: [safeguards]."
+              
+        max_recovery_attempts: 2
+        learn_from_past: true
+
+  # ---------------------------------------------------------------------------
+  # CATEGORY 10: HARD REJECTION
+  # ---------------------------------------------------------------------------
+  hard_rejection:
+    category_id: "hard_rejection"
+    display_name: "Hard Rejection"
+    description: "Firm refusals requiring graceful exit"
+    frequency_in_training: "5%"
+    difficulty: "exit"
+    
+    sub_types:
+      - id: "not_interested"
+        display_name: "Not Interested"
+        description: "Clear but soft rejection"
+        
+        indicators:
+          exact_phrases:
+            - "not interested"
+            - "no thanks"
+            - "not for me"
+            - "I'll pass"
+            - "don't think so"
+            
+        response_strategies:
+          primary: "soft_exit"
+          sequence:
+            1:
+              name: "Respect Decision"
+              example: "I understand - I appreciate you being direct with me."
+              
+            2:
+              name: "Leave Door Open"
+              example: "If anything changes, ${user.display_name} is always here to help."
+              
+            3:
+              name: "Professional Close"
+              example: "Thanks for your time today. Take care!"
+              
+        max_recovery_attempts: 1
+        graceful_exit: true
+        
+      - id: "stop_contacting"
+        display_name: "Stop Contacting Me"
+        description: "Request to stop contact"
+        
+        indicators:
+          exact_phrases:
+            - "stop calling"
+            - "don't contact"
+            - "leave me alone"
+            - "take me off your list"
+            - "stop texting"
+            - "do not call"
+            - "remove my number"
+            
+        response_strategies:
+          primary: "graceful_exit"
+          sequence:
+            1:
+              name: "Immediate Compliance"
+              example: "Absolutely - I'll remove you from our contact list right now. I apologize for any inconvenience."
+              
+        max_recovery_attempts: 0
+        compliance_action: "add_to_dnc"
+        immediate_exit: true
+        
+      - id: "absolute_no"
+        display_name: "Absolute No"
+        description: "Emphatic final rejection"
+        
+        indicators:
+          exact_phrases:
+            - "absolutely not"
+            - "never"
+            - "under no circumstances"
+            - "hell no"
+            - "are you deaf"
+            - "I said no"
+            
+        response_strategies:
+          primary: "respect_and_exit"
+          sequence:
+            1:
+              name: "Accept Immediately"
+              example: "I hear you loud and clear. I'll let you go. Take care."
+              
+        max_recovery_attempts: 0
+        immediate_exit: true
+
+# =============================================================================
+# LIFE EVENTS & SIGNALS
+# =============================================================================
+
+life_events:
+  source: "signals.yaml, sales_intelligence.yaml"
+  
+  events:
+    - id: "new_home"
+      display_name: "New Home Purchase"
+      description: "Customer buying or recently bought a home"
+      
+      indicators:
+        phrases:
+          - "just bought"
+          - "new house"
+          - "moving"
+          - "closing on"
+          - "first home"
+          - "new home"
+          - "bought a house"
+          - "under contract"
+        signals:
+          - "mortgage_inquiry"
+          - "address_change"
+          - "home_inspection"
+          
+      triggered_products:
+        primary:
+          - product: "home_insurance"
+            relevance: 95
+            urgency: "high"
+        secondary:
+          - product: "auto_insurance"
+            relevance: 60
+            reason: "bundle_opportunity"
+          - product: "umbrella_insurance"
+            relevance: 50
+          - product: "life_insurance"
+            relevance: 40
+            
+      cross_industry_triggers:
+        - partner: "mortgage_services"
+          relevance: 90
+        - partner: "home_inspection"
+          relevance: 85
+        - partner: "moving_services"
+          relevance: 70
+          
+    - id: "new_baby"
+      display_name: "New Baby"
+      description: "Customer expecting or recently had a baby"
+      
+      indicators:
+        phrases:
+          - "expecting"
+          - "pregnant"
+          - "new baby"
+          - "just had a baby"
+          - "going to be a parent"
+          - "having a child"
+          - "due date"
+          
+      triggered_products:
+        primary:
+          - product: "life_insurance"
+            relevance: 95
+            urgency: "high"
+        secondary:
+          - product: "health_insurance"
+            relevance: 80
+          - product: "disability_insurance"
+            relevance: 70
+          - product: "umbrella_insurance"
+            relevance: 50
+            
+    - id: "marriage"
+      display_name: "Marriage"
+      description: "Customer getting married or recently married"
+      
+      indicators:
+        phrases:
+          - "getting married"
+          - "engaged"
+          - "wedding"
+          - "fiancé"
+          - "just married"
+          - "newlywed"
+          
+      triggered_products:
+        primary:
+          - product: "life_insurance"
+            relevance: 85
+          - product: "home_insurance"
+            relevance: 70
+        secondary:
+          - product: "auto_insurance"
+            relevance: 60
+            reason: "combine_policies"
+          - product: "umbrella_insurance"
+            relevance: 45
+            
+    - id: "new_vehicle"
+      display_name: "New Vehicle"
+      description: "Customer buying or recently bought a vehicle"
+      
+      indicators:
+        phrases:
+          - "new car"
+          - "buying a car"
+          - "just bought a car"
+          - "new truck"
+          - "new vehicle"
+          - "getting a new car"
+          - "picking up my new"
+          
+      triggered_products:
+        primary:
+          - product: "auto_insurance"
+            relevance: 95
+            urgency: "high"
+        secondary:
+          - product: "umbrella_insurance"
+            relevance: 40
+            condition: "high_value_vehicle"
+            
+    - id: "retirement"
+      display_name: "Retirement"
+      description: "Customer approaching or in retirement"
+      
+      indicators:
+        phrases:
+          - "retiring"
+          - "retirement"
+          - "going to retire"
+          - "stopped working"
+          - "retired"
+          - "leaving my job"
+          
+      triggered_products:
+        primary:
+          - product: "life_insurance"
+            relevance: 70
+            type: "review_existing"
+        secondary:
+          - product: "home_insurance"
+            relevance: 50
+            reason: "coverage_review"
+          - product: "auto_insurance"
+            relevance: 45
+            reason: "reduced_mileage_discount"
+            
+      cross_industry_triggers:
+        - partner: "financial_planning"
+          relevance: 85
+          
+    - id: "business_start"
+      display_name: "Starting a Business"
+      description: "Customer starting or recently started a business"
+      
+      indicators:
+        phrases:
+          - "starting a business"
+          - "new business"
+          - "opening a shop"
+          - "entrepreneur"
+          - "launching"
+          - "going out on my own"
+          
+      triggered_products:
+        primary:
+          - product: "commercial_insurance"
+            relevance: 95
+            urgency: "high"
+        secondary:
+          - product: "cyber_insurance"
+            relevance: 70
+          - product: "life_insurance"
+            relevance: 60
+            type: "key_person"
+            
+    - id: "job_change"
+      display_name: "Job Change"
+      description: "Customer changing jobs or relocating for work"
+      
+      indicators:
+        phrases:
+          - "new job"
+          - "changing jobs"
+          - "got a promotion"
+          - "relocating for work"
+          - "starting a new position"
+          - "transferred"
+          
+      triggered_products:
+        primary:
+          - product: "auto_insurance"
+            relevance: 65
+            reason: "new_commute"
+        secondary:
+          - product: "life_insurance"
+            relevance: 50
+            reason: "income_change"
+            
+      cross_industry_triggers:
+        - partner: "real_estate_services"
+          relevance: 70
+          condition: "relocation"
+          
+    - id: "children_driving"
+      display_name: "Teen Driver"
+      description: "Customer has children reaching driving age"
+      
+      indicators:
+        phrases:
+          - "teen driver"
+          - "kid got license"
+          - "teaching to drive"
+          - "16 year old"
+          - "teenager driving"
+          - "just got their license"
+          - "permit"
+          
+      triggered_products:
+        primary:
+          - product: "auto_insurance"
+            relevance: 95
+            urgency: "high"
+        secondary:
+          - product: "umbrella_insurance"
+            relevance: 80
+            reason: "increased_liability_exposure"
+
+# =============================================================================
+# CROSS-SELL CONFIGURATION
+# =============================================================================
+
+cross_sell_configuration:
+  source: "cross_sell_engine.py, cross_sell_rules.py"
+  
+  framework:
+    version: "2.0"
+    default_enabled: true
+    
+  global_settings:
+    max_attempts_per_conversation: 2
+    min_qualification_progress_percent: 50
+    min_confidence_threshold: 0.6
+    cool_down_between_attempts_turns: 5
+    
+  trigger_types:
+    - id: "field_collected"
+      description: "Trigger when a specific field is collected"
+      parameters:
+        - field_id
+        - condition
+        - value
+      example:
+        field_id: "homeowner"
+        condition: "equals"
+        value: true
+        
+    - id: "signal_detected"
+      description: "Trigger when a buying signal is detected"
+      parameters:
+        - signal_id
+        - confidence_threshold
+      example:
+        signal_id: "new_home"
+        confidence_threshold: 0.7
+        
+    - id: "keyword_mentioned"
+      description: "Trigger when customer mentions specific keywords"
+      parameters:
+        - keywords
+        - match_type
+      example:
+        keywords: ["moving", "new house", "bought a home"]
+        match_type: "any"
+        
+    - id: "objection_type"
+      description: "Trigger based on objection type"
+      parameters:
+        - objection_category
+        - objection_sub_type
+      example:
+        objection_category: "price_budget"
+        trigger_action: "bundle_discount_mention"
+        
+    - id: "qualification_progress"
+      description: "Trigger at qualification milestones"
+      parameters:
+        - progress_percentage
+        - fields_collected_count
+      example:
+        progress_percentage: 75
+        
+    - id: "customer_attribute"
+      description: "Trigger based on customer attributes"
+      parameters:
+        - attribute_name
+        - condition
+        - value
+      example:
+        attribute_name: "vehicle_value"
+        condition: "greater_than"
+        value: 50000
+        
+    - id: "transaction_stage"
+      description: "Trigger at transaction milestones"
+      parameters:
+        - stage_id
+      example:
+        stage_id: "quote_delivered"
+        
+  timing_options:
+    - id: "immediate"
+      description: "Trigger immediately when condition met"
+      use_case: "High-relevance opportunities"
+      
+    - id: "after_field"
+      description: "Trigger after collecting the triggering field"
+      use_case: "Natural conversation flow"
+      default: true
+      
+    - id: "end_of_qualification"
+      description: "Trigger after primary qualification complete"
+      use_case: "Avoid disrupting main flow"
+      
+    - id: "after_objection"
+      description: "Trigger after handling an objection"
+      use_case: "Bundle discount as objection response"
+      
+    - id: "follow_up"
+      description: "Trigger in follow-up conversation"
+      use_case: "Nurture campaigns"
+
+  insurance_cross_sell_rules:
+    auto_to_home:
+      rule_id: "auto_to_home"
+      primary_product: "auto_insurance"
+      target_product: "home_insurance"
+      relevance_score: 85
+      priority: 1
+      enabled_default: true
+      
+      triggers:
+        - type: "field_collected"
+          field_id: "homeowner"
+          condition: "equals"
+          value: true
+          
+      bundle_discount:
+        range: "15-25%"
+        messaging: "Most customers who bundle auto and home save 15-25% on both policies."
+        
+      seed_messages:
+        voice: "Since you own your home, have you ever looked at bundling your auto and home insurance? Most of our customers save 15-25% when they do."
+        sms: "Quick Q - since you're a homeowner, want to see bundle savings? Most save 15-25%"
+        chat: "By the way, since you own your home - bundling auto and home usually saves 15-25%. Want me to gather some quick info?"
+        email: "I noticed you're a homeowner. Many of our clients find significant savings by bundling their auto and home insurance - typically 15-25%. Would you like me to have ${user.display_name} put together a home quote as well?"
+        
+    auto_to_umbrella:
+      rule_id: "auto_to_umbrella"
+      primary_product: "auto_insurance"
+      target_product: "umbrella_insurance"
+      relevance_score: 70
+      priority: 2
+      enabled_default: true
+      
+      triggers:
+        - type: "customer_attribute"
+          attribute_name: "vehicle_value"
+          condition: "greater_than"
+          value: 50000
+        - type: "field_collected"
+          field_id: "teen_driver"
+          condition: "equals"
+          value: true
+          
+      seed_messages:
+        voice: "With a vehicle of this value and your other assets to protect, have you considered umbrella insurance? It provides an extra layer of liability protection."
+        sms: "With your assets, umbrella insurance adds extra protection. Worth a look?"
+        chat: "Something to consider - with your vehicle value, umbrella insurance provides extra liability protection. Want more info?"
+        
+    auto_to_life:
+      rule_id: "auto_to_life"
+      primary_product: "auto_insurance"
+      target_product: "life_insurance"
+      relevance_score: 50
+      priority: 3
+      enabled_default: false
+      
+      triggers:
+        - type: "signal_detected"
+          signal_id: "family_mention"
+        - type: "keyword_mentioned"
+          keywords: ["kids", "children", "family", "spouse", "wife", "husband"]
+          
+      seed_messages:
+        voice: "You mentioned your family - have you given any thought to life insurance to make sure they're protected if anything happened to you?"
+        
+    home_to_auto:
+      rule_id: "home_to_auto"
+      primary_product: "home_insurance"
+      target_product: "auto_insurance"
+      relevance_score: 85
+      priority: 1
+      enabled_default: true
+      
+      triggers:
+        - type: "field_collected"
+          field_id: "has_vehicle"
+          condition: "equals"
+          value: true
+          
+      bundle_discount:
+        range: "15-25%"
+        
+    home_to_umbrella:
+      rule_id: "home_to_umbrella"
+      primary_product: "home_insurance"
+      target_product: "umbrella_insurance"
+      relevance_score: 75
+      priority: 2
+      enabled_default: true
+      
+      triggers:
+        - type: "customer_attribute"
+          attribute_name: "dwelling_coverage"
+          condition: "greater_than"
+          value: 750000
+        - type: "field_collected"
+          field_id: "pool_trampoline"
+          condition: "not_equals"
+          value: "none"
+          
+    life_to_disability:
+      rule_id: "life_to_disability"
+      primary_product: "life_insurance"
+      target_product: "disability_insurance"
+      relevance_score: 75
+      priority: 1
+      enabled_default: true
+      
+      triggers:
+        - type: "field_collected"
+          field_id: "has_dependents"
+          condition: "equals"
+          value: true
+          
+    commercial_to_cyber:
+      rule_id: "commercial_to_cyber"
+      primary_product: "commercial_insurance"
+      target_product: "cyber_insurance"
+      relevance_score: 80
+      priority: 1
+      enabled_default: true
+      
+      triggers:
+        - type: "field_collected"
+          field_id: "industry"
+          condition: "in"
+          value: ["technology", "healthcare", "financial_services", "professional_services"]
+          
+    commercial_to_epli:
+      rule_id: "commercial_to_epli"
+      primary_product: "commercial_insurance"
+      target_product: "employment_practices_insurance"
+      relevance_score: 65
+      priority: 2
+      enabled_default: true
+      
+      triggers:
+        - type: "field_collected"
+          field_id: "number_of_employees"
+          condition: "greater_than"
+          value: 10
+
+# =============================================================================
+# CROSS-INDUSTRY REFERRAL CONFIGURATION
+# =============================================================================
+
+cross_industry_referrals:
+  source: "cross_sell_engine.py"
+  
+  platform_settings:
+    enabled_default: false
+    requires_tenant_activation: true
+    max_referrals_per_conversation: 1
+    min_confidence_threshold: 0.7
+    
+  timing_options:
+    - "after_primary_qualification_complete"
+    - "after_objection_acknowledged"
+    - "on_explicit_mention"
+    
+  blocked_contexts:
+    - "customer_frustrated"
+    - "complaint_in_progress"
+    - "cancellation_request"
+    - "negative_sentiment_high"
+    - "hard_rejection_received"
+    
+  partner_configurations:
+  
+    insurance_to_partners:
+      mortgage_services:
+        partner_type: "mortgage"
+        priority: 1
+        enabled_default: true
+        
+        triggers:
+          objection_based:
+            - objection: "timing_existing_commitment"
+              reason: "May be refinancing opportunity"
+            - objection: "budget_constraints"
+              reason: "Better mortgage rate could free budget"
+          signal_based:
+            - "buying_home"
+            - "new_home"
+            - "first_home"
+            - "refinancing"
+          keyword_triggers:
+            - "mortgage"
+            - "refinancing"
+            - "home loan"
+            - "buying a house"
+            - "house hunting"
+            
+        seed_messages:
+          default: "Since you're looking at a new home, would you like me to connect you with our mortgage partner? They might be able to help with financing."
+          objection_based: "I understand budget is a concern. Sometimes a better mortgage rate can free up money for proper coverage. Want me to connect you with our mortgage partner?"
+          
+      real_estate_services:
+        partner_type: "real_estate"
+        priority: 2
+        enabled_default: true
+        
+        triggers:
+          signal_based:
+            - "moving"
+            - "relocating"
+            - "new_city"
+            - "selling_home"
+          keyword_triggers:
+            - "looking for a house"
+            - "need to sell"
+            - "real estate agent"
+            - "moving to"
+            
+        seed_messages:
+          default: "Since you mentioned moving, would you like me to connect you with a real estate professional in that area?"
+          
+      legal_services:
+        partner_type: "legal"
+        priority: 3
+        enabled_default: false
+        
+        triggers:
+          objection_based:
+            - objection: "authority_needs_approval"
+          keyword_triggers:
+            - "lawyer"
+            - "legal"
+            - "attorney"
+            - "estate planning"
+            - "will"
+            - "trust"
+            
+      financial_planning:
+        partner_type: "financial_services"
+        priority: 4
+        enabled_default: false
+        
+        triggers:
+          signal_based:
+            - "retirement"
+            - "inheritance"
+            - "business_sale"
+          keyword_triggers:
+            - "financial advisor"
+            - "investment"
+            - "retirement planning"
+            - "wealth management"
+            
+    real_estate_to_partners:
+      mortgage_services:
+        partner_type: "mortgage"
+        priority: 1
+        enabled_default: true
+        
+        triggers:
+          field_based:
+            field: "pre_approved"
+            value: false
+          signal_based:
+            - "offer_accepted"
+            - "under_contract"
+            - "pre_approval_needed"
+            
+      home_insurance:
+        partner_type: "insurance"
+        priority: 2
+        enabled_default: true
+        
+        triggers:
+          signal_based:
+            - "offer_accepted"
+            - "under_contract"
+            - "closing_soon"
+            
+        seed_messages:
+          default: "Congratulations on your accepted offer! You'll need home insurance before closing - would you like me to connect you with our insurance partner?"
+          
+      home_inspection:
+        partner_type: "services"
+        priority: 2
+        enabled_default: true
+        
+        triggers:
+          signal_based:
+            - "offer_submitted"
+            - "offer_accepted"
+            
+      moving_services:
+        partner_type: "services"
+        priority: 5
+        enabled_default: true
+        
+        triggers:
+          signal_based:
+            - "closing_soon"
+            - "closed"
+
+# =============================================================================
+# CALLBACK & SERVICE REQUEST CONFIGURATION
+# =============================================================================
+
+callback_scenarios:
+  source: "COMPREHENSIVE_PLATFORM_FIELD_REGISTRY_V2_PART2.yaml"
+  
+  types:
+    missed_call_outreach:
+      id: "missed_call_outreach"
+      display_name: "Missed Call Outreach"
+      description: "Proactive outreach when customer called but didn't connect"
+      
+      enabled_default: true
+      delay_seconds: 30
+      max_attempts: 2
+      
+      triggers:
+        - "customer_called_user"
+        - "user_unavailable"
+        - "voicemail_left"
+        - "no_voicemail"
+        
+      greeting_templates:
+        voice:
+          standard: "Hi, this is ${ai.name}, I work with ${user.full_name} at ${company.name}. I understand you tried reaching ${user.display_name} just now. ${user.display_name} asked me to reach out right away to see how I can help. What can I assist you with today?"
+          with_context: "Hi, this is ${ai.name} from ${company.name}, calling on behalf of ${user.full_name}. I see you just tried to reach ${user.display_name} - ${pronoun} is currently with another client but wanted me to get back to you right away. How can I help?"
+          after_hours: "Hi, this is ${ai.name}, I work with ${user.full_name} at ${company.name}. I noticed you called after hours. ${user.display_name} will be back in the office ${next_available}, but I wanted to reach out now to see if there's anything I can help with or get started on for you."
+          
+        sms:
+          standard: "Hi! This is ${ai.name} from ${company.name}, working with ${user.full_name}. Saw you tried calling - ${user.display_name} asked me to reach out. How can I help?"
+          after_hours: "Hi! ${ai.name} here from ${company.name}. ${user.display_name} is out of office but I saw your call. Can I help with anything in the meantime?"
+          
+    quote_follow_up:
+      id: "quote_follow_up"
+      display_name: "Quote Follow-Up"
+      description: "Follow up after quote sent with no response"
+      
+      trigger: "quote_sent_no_response"
+      delay_hours: 24
+      max_attempts: 3
+      
+      sequence:
+        attempt_1:
+          delay_hours: 24
+          channel: "same_as_quote"
+          template: "Hi ${customer_name}, this is ${ai.name} from ${company.name}. Just checking if you had a chance to review the quote we sent. Any questions I can help with?"
+          
+        attempt_2:
+          delay_hours: 72
+          channel: "alternative"
+          template: "Hi ${customer_name}, ${ai.name} again from ${company.name}. Wanted to make sure the quote didn't get lost. The rate we quoted is good until ${expiry_date}. Can we help answer any questions?"
+          
+        attempt_3:
+          delay_hours: 168
+          channel: "email"
+          template: "final_attempt_email"
+          
+    appointment_reminder:
+      id: "appointment_reminder"
+      display_name: "Appointment Reminder"
+      description: "Remind customer of upcoming appointment"
+      
+      trigger: "appointment_upcoming"
+      timing:
+        - hours_before: 24
+        - hours_before: 2
+        
+      templates:
+        24_hours:
+          sms: "Hi ${customer_name}! Reminder: You have an appointment with ${user.display_name} tomorrow at ${appointment_time}. Reply YES to confirm or call ${company.main_phone} to reschedule."
+          email: "appointment_reminder_24h"
+          
+        2_hours:
+          sms: "Your appointment with ${user.display_name} is in 2 hours at ${appointment_time}. See you soon! 📅"
+          
+    document_follow_up:
+      id: "document_follow_up"
+      display_name: "Document Follow-Up"
+      description: "Follow up on requested documents not received"
+      
+      trigger: "documents_requested_not_received"
+      delay_hours: 48
+      max_attempts: 2
+      
+      templates:
+        sms: "Hi ${customer_name}, ${ai.name} here. Just a friendly reminder - we're still waiting on ${document_type} to move forward. Can I help with anything?"
+        email: "document_reminder_email"
+
+service_requests:
+  source: "COMPREHENSIVE_PLATFORM_FIELD_REGISTRY_V2_PART2.yaml"
+  
+  insurance:
+    - id: "vehicle_update"
+      name: "Vehicle Update"
+      description: "Add, remove, or change vehicle on policy"
+      
+      trigger_phrases:
+        - "new car"
+        - "sold my car"
+        - "added a vehicle"
+        - "traded in"
+        - "different car"
+        - "got a new car"
+        
+      fields_to_collect:
+        - vehicle_year
+        - vehicle_make
+        - vehicle_model
+        - vehicle_vin
+        - effective_date
+        
+      processing_time: "24-48 hours"
+      may_affect_rates: true
+      
+    - id: "address_change"
+      name: "Address Change"
+      description: "Update address on policies"
+      
+      trigger_phrases:
+        - "moved"
+        - "new address"
+        - "relocating"
+        - "moving"
+        - "changed address"
+        
+      fields_to_collect:
+        - new_address
+        - move_date
+        - update_all_policies
+        
+      processing_time: "24-48 hours"
+      may_affect_rates: true
+      cross_industry_trigger: "real_estate_services"
+      
+    - id: "driver_update"
+      name: "Driver Update"
+      description: "Add or remove driver from policy"
+      
+      trigger_phrases:
+        - "add driver"
+        - "remove driver"
+        - "new driver"
+        - "teenager driving"
+        - "kid got license"
+        
+      fields_to_collect:
+        - driver_name
+        - date_of_birth
+        - license_number
+        - relationship
+        
+      processing_time: "24-48 hours"
+      may_affect_rates: true
+      
+    - id: "coverage_change"
+      name: "Coverage Change"
+      description: "Modify coverage levels"
+      
+      trigger_phrases:
+        - "increase coverage"
+        - "reduce coverage"
+        - "add coverage"
+        - "change my limits"
+        - "lower my deductible"
+        
+      fields_to_collect:
+        - policy_number
+        - change_type
+        - new_coverage_amount
+        - effective_date
+        
+      processing_time: "24-48 hours"
+      requires_broker_review: true
+      
+    - id: "billing_inquiry"
+      name: "Billing Inquiry"
+      description: "Questions about billing or payments"
+      
+      trigger_phrases:
+        - "my bill"
+        - "payment"
+        - "charge"
+        - "premium"
+        - "invoice"
+        - "payment plan"
+        
+      fields_to_collect:
+        - policy_number
+        - inquiry_type
+        - billing_question
+        
+      processing_time: "immediate to 24 hours"
+      
+    - id: "document_request"
+      name: "Document Request"
+      description: "Request policy documents"
+      
+      trigger_phrases:
+        - "proof of insurance"
+        - "id card"
+        - "policy documents"
+        - "declaration page"
+        - "certificate"
+        - "insurance card"
+        
+      fields_to_collect:
+        - document_type
+        - delivery_method
+        - email_address
+        
+      processing_time: "immediate to 24 hours"
+      
+    - id: "claims_inquiry"
+      name: "Claims Inquiry"
+      description: "Questions about claims process or status"
+      
+      trigger_phrases:
+        - "file a claim"
+        - "claim status"
+        - "accident"
+        - "damage"
+        - "had a claim"
+        
+      fields_to_collect:
+        - claim_type
+        - date_of_incident
+        - description
+        
+      processing_time: "varies"
+      may_require_transfer: true
+      
+    - id: "cancellation"
+      name: "Policy Cancellation"
+      description: "Request to cancel policy"
+      
+      trigger_phrases:
+        - "cancel my policy"
+        - "end coverage"
+        - "stop insurance"
+        - "canceling"
+        
+      fields_to_collect:
+        - policy_number
+        - cancellation_date
+        - reason_for_cancellation
+        
+      processing_time: "24-48 hours"
+      requires_broker_review: true
+      retention_opportunity: true
+      
+    - id: "renewal_inquiry"
+      name: "Renewal Inquiry"
+      description: "Questions about policy renewal"
+      
+      trigger_phrases:
+        - "renewal"
+        - "renew my policy"
+        - "policy expiring"
+        - "renewal notice"
+        
+      fields_to_collect:
+        - policy_number
+        - renewal_preference
+        - any_changes
+        
+      processing_time: "varies"
+
+  real_estate:
+    - id: "showing_schedule"
+      name: "Schedule Showing"
+      description: "Request to view a property"
+      
+      trigger_phrases:
+        - "schedule showing"
+        - "see the property"
+        - "tour the house"
+        - "view the home"
+        - "want to see"
+        
+      fields_to_collect:
+        - property_address
+        - preferred_date
+        - preferred_time
+        - contact_phone
+        
+      processing_time: "same day"
+      
+    - id: "listing_update"
+      name: "Listing Update"
+      description: "Request changes to listing"
+      
+      trigger_phrases:
+        - "update listing"
+        - "change price"
+        - "update photos"
+        - "modify listing"
+        
+      fields_to_collect:
+        - property_address
+        - update_type
+        - update_details
+        
+      processing_time: "24 hours"
+      requires_agent_review: true
+      
+    - id: "offer_status"
+      name: "Offer Status"
+      description: "Check on submitted offer"
+      
+      trigger_phrases:
+        - "offer status"
+        - "hear back"
+        - "accepted"
+        - "any updates"
+        
+      fields_to_collect:
+        - property_address
+        - offer_date
+        
+      processing_time: "immediate to 4 hours"
+      
+    - id: "document_request"
+      name: "Document Request"
+      description: "Request transaction documents"
+      
+      trigger_phrases:
+        - "documents"
+        - "paperwork"
+        - "contract"
+        - "disclosure"
+        
+      fields_to_collect:
+        - document_type
+        - property_address
+        
+      processing_time: "24 hours"
+      
+    - id: "feedback_request"
+      name: "Showing Feedback"
+      description: "Request or provide showing feedback"
+      
+      trigger_phrases:
+        - "feedback"
+        - "how did showing go"
+        - "what did they think"
+        
+      fields_to_collect:
+        - property_address
+        - showing_date
+        - feedback_notes
+        
+      processing_time: "immediate"
+
+# =============================================================================
+# END OF PART 4 - CONTINUE TO PART 5 FOR:
+# - Compliance & Safety Configuration (detailed)
+# - PII Handling Rules
+# - Quality & Training Parameters
+# - UI Controls Configuration
+# - Template Variables Reference
+# =============================================================================

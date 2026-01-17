@@ -1,0 +1,1655 @@
+# =============================================================================
+# COMPREHENSIVE PLATFORM FIELD REGISTRY V2.0 - PART 5 OF 5 (FINAL)
+# =============================================================================
+# Generated: 2025-01-08
+# Source Files: compliance configs, quality configs, UI schemas, 
+#               training distribution configs, template systems
+#
+# This file contains:
+# - Compliance & Safety Configuration (detailed)
+# - PII Handling Rules
+# - Industry-Specific Compliance
+# - AI Disclosure Requirements
+# - Quality & Training Parameters
+# - UI Controls Configuration
+# - Template Variables Reference (complete)
+# - Training Distribution Configuration
+# - SLM Routing Configuration
+# =============================================================================
+
+# =============================================================================
+# COMPLIANCE & SAFETY CONFIGURATION
+# =============================================================================
+
+compliance_configuration:
+  
+  # ---------------------------------------------------------------------------
+  # PII (Personally Identifiable Information) Rules
+  # ---------------------------------------------------------------------------
+  pii_rules:
+    source: "compliance configs, COMPREHENSIVE_PLATFORM_FIELD_REGISTRY_V2_PART2.yaml"
+    
+    never_collect:
+      description: "Fields that AI should NEVER collect - must redirect to human"
+      fields:
+        - field: "social_insurance_number"
+          display_name: "Social Insurance Number"
+          aliases:
+            - "SIN"
+            - "SSN"
+            - "Social Security Number"
+            - "social security"
+            - "sin number"
+            - "ssn number"
+          reason: "Government ID - must be provided directly to licensed professional"
+          detection_patterns:
+            - "\\b\\d{3}[-\\s]?\\d{2}[-\\s]?\\d{4}\\b"
+            - "\\b\\d{3}[-\\s]?\\d{3}[-\\s]?\\d{3}\\b"
+          action: "redirect_immediately"
+          compliance_flag: "critical"
+        
+        - field: "drivers_license_number"
+          display_name: "Driver's License Number"
+          aliases:
+            - "DL number"
+            - "license number"
+            - "driver license"
+            - "driving license"
+          reason: "Government ID - must be provided directly to licensed professional"
+          note: "Can ask IF they have a valid license, but not the number"
+          action: "redirect_immediately"
+        
+        - field: "drivers_license_image"
+          display_name: "Driver's License Image"
+          aliases:
+            - "DL picture"
+            - "license photo"
+            - "ID photo"
+            - "picture of license"
+            - "scan of license"
+          reason: "Government ID image - must be provided directly"
+          action: "redirect_immediately"
+        
+        - field: "bank_account_number"
+          display_name: "Bank Account Number"
+          aliases:
+            - "account number"
+            - "banking info"
+            - "checking account"
+            - "savings account"
+            - "routing number"
+          reason: "Financial information - must be provided directly"
+          detection_patterns:
+            - "\\b\\d{8,17}\\b"
+          action: "redirect_immediately"
+          compliance_flag: "critical"
+        
+        - field: "credit_card_number"
+          display_name: "Credit Card Number"
+          aliases:
+            - "card number"
+            - "CC number"
+            - "payment card"
+            - "debit card number"
+            - "visa number"
+            - "mastercard number"
+          reason: "Payment information - must be provided directly"
+          detection_patterns:
+            - "\\b\\d{4}[-\\s]?\\d{4}[-\\s]?\\d{4}[-\\s]?\\d{4}\\b"
+            - "\\b\\d{16}\\b"
+          action: "redirect_immediately"
+          compliance_flag: "critical"
+          pci_dss: true
+        
+        - field: "passport_number"
+          display_name: "Passport Number"
+          aliases:
+            - "passport"
+            - "passport ID"
+            - "travel document"
+          reason: "Government ID - must be provided directly"
+          action: "redirect_immediately"
+        
+        - field: "health_card_number"
+          display_name: "Health Card Number"
+          aliases:
+            - "OHIP"
+            - "OHIP number"
+            - "health card"
+            - "medical ID"
+            - "health insurance number"
+          - "medicare number"
+        reason: "Health information - must be provided directly"
+        action: "redirect_immediately"
+        hipaa_relevant: true
+        
+      - field: "tax_id"
+        display_name: "Tax ID / Business Number"
+        aliases:
+          - "tax number"
+          - "EIN"
+          - "employer identification"
+          - "business number"
+          - "GST number"
+          - "HST number"
+        reason: "Tax information - must be provided directly"
+        action: "redirect_immediately"
+        
+      - field: "medical_records"
+        display_name: "Medical Records"
+        aliases:
+          - "health records"
+          - "medical history details"
+          - "prescription information"
+          - "diagnosis details"
+        reason: "Protected health information"
+        action: "redirect_immediately"
+        hipaa_relevant: true
+        note: "Can ask general health questions for life insurance, but not request records"
+
+    redirect_templates:
+      voice:
+        standard: "I'm not able to collect that type of sensitive information directly. For security, please send that to ${user.display_name} directly at ${user.email} or ${user.cell_phone}."
+        with_reason: "That's sensitive information I can't collect for security reasons. ${user.display_name} will need to receive that directly - you can email it to ${user.email} or we can arrange a secure method."
+        
+      sms:
+        standard: "For security, please send that info directly to ${user.display_name} at ${user.email} 🔒"
+        short: "Can't collect that here - pls send to ${user.email}"
+        
+      chat:
+        standard: "For your security, I can't collect that type of information. Please send it directly to ${user.display_name} at ${user.email} 🔒"
+        with_explanation: "That's sensitive information that I'm not able to handle for security reasons. Please send it directly to ${user.display_name} at ${user.email} - it's the safest way."
+        
+      email:
+        standard: |
+          For your security and privacy, I'm unable to collect sensitive information like this through our system. 
+          
+          Please send any sensitive documents or information directly to:
+          ${user.full_name}
+          ${user.email}
+          ${user.cell_phone}
+          
+          This ensures your information is handled securely by a licensed professional.
+
+    sensitive_but_collectible:
+      description: "Fields that are sensitive but can be collected with proper handling"
+      
+      - field: "date_of_birth"
+        sensitivity: "high"
+        collection_allowed: true
+        storage: "encrypted"
+        display: "masked_except_last_4"
+        retention: "policy_dependent"
+        
+      - field: "annual_income"
+        sensitivity: "high"
+        collection_allowed: true
+        can_accept_range: true
+        storage: "encrypted"
+        
+      - field: "health_conditions"
+        sensitivity: "very_high"
+        collection_allowed: true
+        collection_context: "life_insurance_only"
+        storage: "encrypted"
+        hipaa_considerations: true
+        
+      - field: "tobacco_use"
+        sensitivity: "high"
+        collection_allowed: true
+        collection_context: "life_insurance_only"
+        
+      - field: "mortgage_balance"
+        sensitivity: "high"
+        collection_allowed: true
+        can_accept_range: true
+
+  # ---------------------------------------------------------------------------
+  # Industry-Specific Compliance
+  # ---------------------------------------------------------------------------
+  industry_compliance:
+  
+    insurance:
+      display_name: "Insurance Industry Compliance"
+      jurisdictions:
+        - region: "Ontario, Canada"
+          regulatory_bodies:
+            - name: "FSRA"
+              full_name: "Financial Services Regulatory Authority of Ontario"
+              website: "https://www.fsrao.ca"
+              
+            - name: "RIBO"
+              full_name: "Registered Insurance Brokers of Ontario"
+              website: "https://www.ribo.com"
+              license_type: "broker"
+              
+            - name: "OTL"
+              full_name: "Ontario Agent License"
+              license_type: "agent"
+              
+        - region: "United States (General)"
+          regulatory_bodies:
+            - name: "State Insurance Departments"
+              note: "Varies by state"
+            - name: "NAIC"
+              full_name: "National Association of Insurance Commissioners"
+              
+      forbidden_actions:
+        - id: "quote_premiums"
+          description: "Cannot provide specific premium quotes"
+          severity: "critical"
+          applies_to: ["assistant"]
+          allowed_in: ["agent"]
+          
+        - id: "recommend_coverage_amounts"
+          description: "Cannot recommend specific coverage amounts"
+          severity: "critical"
+          applies_to: ["assistant"]
+          
+        - id: "advise_on_coverage_types"
+          description: "Cannot advise which coverage types to purchase"
+          severity: "critical"
+          applies_to: ["assistant"]
+          
+        - id: "guarantee_approval"
+          description: "Cannot guarantee policy approval"
+          severity: "critical"
+          applies_to: ["assistant", "agent"]
+          
+        - id: "bind_coverage"
+          description: "Cannot bind or confirm coverage"
+          severity: "critical"
+          applies_to: ["assistant"]
+          
+        - id: "promise_rates"
+          description: "Cannot promise specific rates"
+          severity: "high"
+          applies_to: ["assistant"]
+          
+        - id: "compare_specific_prices"
+          description: "Cannot compare specific competitor prices"
+          severity: "high"
+          applies_to: ["assistant"]
+          
+        - id: "provide_claims_advice"
+          description: "Cannot advise on claims process"
+          severity: "medium"
+          applies_to: ["assistant"]
+          note: "Can explain general process, not specific advice"
+          
+      forbidden_phrases:
+        pricing:
+          - "your rate will be"
+          - "you'll pay"
+          - "your premium is"
+          - "that will cost you"
+          - "the price is"
+          - "I can get you"
+          - "we can offer you"
+          - "your quote is"
+          
+        recommendations:
+          - "I recommend"
+          - "you should get"
+          - "you need"
+          - "the best option is"
+          - "I suggest"
+          - "you need at least"
+          - "that's enough coverage"
+          - "that's not enough coverage"
+          - "I would go with"
+          - "you definitely need"
+          - "I advise"
+          
+        guarantees:
+          - "you're approved"
+          - "I guarantee"
+          - "you're covered"
+          - "we can definitely"
+          - "absolutely will"
+          - "I promise"
+          - "guaranteed to"
+          - "100% certain"
+          
+      required_disclosures:
+        - context: "pricing_question"
+          trigger_phrases: ["how much", "what's the price", "cost", "premium"]
+          disclosure: "I can't provide specific pricing - that requires a licensed professional to review your information and provide an accurate quote."
+          
+        - context: "recommendation_request"
+          trigger_phrases: ["what do you recommend", "should I get", "what's best"]
+          disclosure: "I can explain your options, but coverage recommendations need to come from your licensed advisor who can review your complete situation."
+          
+        - context: "coverage_confirmation"
+          trigger_phrases: ["am I covered", "is this enough", "will this protect"]
+          disclosure: "Only a licensed professional can confirm coverage details and whether it meets your specific needs."
+          
+    real_estate:
+      display_name: "Real Estate Industry Compliance"
+      jurisdictions:
+        - region: "Ontario, Canada"
+          regulatory_bodies:
+            - name: "RECO"
+              full_name: "Real Estate Council of Ontario"
+              website: "https://www.reco.on.ca"
+              
+            - name: "OREA"
+              full_name: "Ontario Real Estate Association"
+              
+        - region: "Canada (National)"
+          regulatory_bodies:
+            - name: "CREA"
+              full_name: "Canadian Real Estate Association"
+              
+        - region: "United States"
+          regulatory_bodies:
+            - name: "NAR"
+              full_name: "National Association of Realtors"
+            - name: "State Real Estate Commissions"
+              note: "Varies by state"
+              
+      forbidden_actions:
+        - id: "provide_property_valuations"
+          description: "Cannot provide property valuations or CMAs"
+          severity: "critical"
+          
+        - id: "estimate_home_values"
+          description: "Cannot estimate what a home is worth"
+          severity: "critical"
+          
+        - id: "provide_cma"
+          description: "Cannot provide Comparative Market Analysis"
+          severity: "critical"
+          
+        - id: "give_legal_advice"
+          description: "Cannot give legal advice on contracts"
+          severity: "critical"
+          
+        - id: "advise_on_offers"
+          description: "Cannot advise on offer amounts or terms"
+          severity: "critical"
+          
+        - id: "negotiate_on_behalf"
+          description: "Cannot negotiate on behalf of client"
+          severity: "critical"
+          
+        - id: "provide_investment_advice"
+          description: "Cannot advise on real estate as investment"
+          severity: "high"
+          
+        - id: "guarantee_sale_outcomes"
+          description: "Cannot guarantee sale price or timeline"
+          severity: "high"
+          
+      fair_housing_compliance:
+        description: "Fair Housing Act compliance requirements"
+        source: "Fair Housing Act (US), Ontario Human Rights Code (Canada)"
+        
+        protected_classes:
+          - "race"
+          - "color"
+          - "national_origin"
+          - "religion"
+          - "sex"
+          - "familial_status"
+          - "disability"
+          - "sexual_orientation"
+          - "gender_identity"
+          - "age"
+          - "marital_status"
+          - "source_of_income"
+          
+        forbidden_discussions:
+          - id: "neighborhood_demographics"
+            description: "Cannot discuss racial/ethnic makeup of neighborhoods"
+            severity: "critical"
+            
+          - id: "school_quality_by_demographics"
+            description: "Cannot comment on schools in relation to demographics"
+            severity: "critical"
+            note: "Can provide factual school ratings from public sources"
+            
+          - id: "crime_rates_by_area"
+            description: "Cannot characterize areas as safe/unsafe"
+            severity: "high"
+            note: "Can direct to public crime statistics"
+            
+          - id: "property_value_by_demographics"
+            description: "Cannot imply property values relate to demographics"
+            severity: "critical"
+            
+        steering_prohibition:
+          description: "Cannot steer clients toward or away from areas based on protected classes"
+          examples:
+            - "You'd probably be more comfortable in [area]"
+            - "Families like yours usually prefer [area]"
+            - "That neighborhood might not be right for you"
+
+  # ---------------------------------------------------------------------------
+  # AI Disclosure Requirements
+  # ---------------------------------------------------------------------------
+  ai_disclosure:
+    description: "Requirements for disclosing AI nature to customers"
+    
+    disclosure_modes:
+      - id: "always_upfront"
+        display_name: "Always Disclose Upfront"
+        description: "Disclose AI nature at the start of every conversation"
+        recommended_for: ["highly_regulated", "sensitive_topics"]
+        
+      - id: "on_request"
+        display_name: "Disclose on Request"
+        description: "Disclose only when directly asked"
+        default: true
+        most_common: true
+        
+      - id: "never_volunteer"
+        display_name: "Never Volunteer"
+        description: "Only disclose if explicitly and directly asked"
+        note: "May not be compliant in all jurisdictions"
+        
+      - id: "context_based"
+        display_name: "Context-Based"
+        description: "Disclose based on conversation context and sensitivity"
+        
+    honesty_requirement:
+      honest_when_asked: true
+      locked: true
+      description: "AI must ALWAYS truthfully identify as AI when directly asked - this cannot be disabled"
+      
+    detection_phrases:
+      direct_questions:
+        - "are you a robot"
+        - "are you AI"
+        - "are you artificial intelligence"
+        - "are you a bot"
+        - "are you a real person"
+        - "are you human"
+        - "am I talking to a person"
+        - "am I talking to a computer"
+        - "is this automated"
+        - "are you a machine"
+        - "are you real"
+        
+      indirect_questions:
+        - "who am I talking to"
+        - "what are you"
+        - "are you there"
+        
+    disclosure_templates:
+      insurance:
+        standard: "Yes, I'm an AI assistant helping gather information for your licensed insurance broker, ${user.display_name}. All quotes, recommendations, and coverage decisions will come from a licensed professional."
+        brief: "Yes, I'm an AI assistant working with ${user.display_name}, a licensed insurance broker."
+        with_reassurance: "Yes, I'm an AI assistant - but I'm here to help gather information that ${user.display_name}, a licensed professional, will use to serve you. All important decisions and recommendations come from them."
+        
+      real_estate:
+        standard: "Yes, I'm an AI assistant helping gather information for your licensed real estate agent, ${user.display_name}. All property valuations, negotiations, and important decisions will be handled by ${pronoun_object} directly."
+        brief: "Yes, I'm an AI assistant working with ${user.display_name}, a licensed real estate professional."
+        
+      general:
+        standard: "Yes, I'm an AI assistant helping ${user.display_name} at ${company.name}. How can I help you today?"
+        brief: "Yes, I'm an AI assistant. How can I help?"
+
+  # ---------------------------------------------------------------------------
+  # Safety Guardrails
+  # ---------------------------------------------------------------------------
+  safety_guardrails:
+    
+    max_rejections:
+      default: 3
+      description: "Maximum number of times to attempt recovery before graceful exit"
+      by_objection_type:
+        hard_rejection: 0
+        stop_contacting: 0
+        price_budget: 2
+        timing: 2
+        authority: 2
+        trust: 2
+        need_value: 2
+        competitor: 2
+        hassle: 2
+        information: 1
+        risk_fear: 2
+        
+    sentiment_monitoring:
+      enabled: true
+      thresholds:
+        concern_level: 0.3
+        escalation_level: 0.1
+        immediate_exit: -0.3
+      actions:
+        at_concern: "soften_approach"
+        at_escalation: "offer_human_transfer"
+        at_immediate_exit: "graceful_exit_immediately"
+        
+    escalation_triggers:
+      immediate:
+        description: "Triggers that require immediate escalation to human"
+        triggers:
+          - id: "customer_angry"
+            indicators: ["yelling", "cursing", "threatening", "demanding manager"]
+            action: "immediate_transfer"
+            
+          - id: "complaint_about_service"
+            indicators: ["complaint", "terrible service", "unacceptable", "report you"]
+            action: "immediate_transfer"
+            
+          - id: "legal_threat"
+            indicators: ["lawyer", "sue", "legal action", "attorney"]
+            action: "immediate_transfer"
+            priority: "urgent"
+            
+          - id: "discrimination_claim"
+            indicators: ["discrimination", "racist", "sexist", "unfair treatment"]
+            action: "immediate_transfer"
+            priority: "urgent"
+            documentation: "required"
+            
+          - id: "regulatory_mention"
+            indicators: ["report to FSRA", "report to RECO", "file complaint", "insurance board"]
+            action: "immediate_transfer"
+            priority: "urgent"
+            
+          - id: "safety_concern"
+            indicators: ["emergency", "danger", "hurt", "accident just happened"]
+            action: "immediate_transfer"
+            may_require_911: true
+            
+      threshold_based:
+        description: "Triggers based on accumulated signals"
+        thresholds:
+          max_objections: 3
+          max_turns_without_progress: 10
+          repeated_price_requests: 2
+          sentiment_drops_below: 0.3
+          repeated_same_question: 3
+          
+    do_not_contact_handling:
+      immediate_compliance: true
+      confirmation_required: true
+      confirmation_message: "I've removed you from our contact list. I apologize for any inconvenience."
+      database_action: "add_to_dnc_list"
+      audit_logging: true
+
+# =============================================================================
+# QUALITY & TRAINING PARAMETERS
+# =============================================================================
+
+quality_configuration:
+  
+  # ---------------------------------------------------------------------------
+  # Extraction Confidence Thresholds
+  # ---------------------------------------------------------------------------
+  extraction_thresholds:
+    source: "field_extractors.py, quality configs"
+    
+    high_confidence:
+      threshold: 0.85
+      action: "accept_automatically"
+      description: "High confidence extraction - use without confirmation"
+      
+    medium_confidence:
+      threshold: 0.65
+      action: "accept_with_soft_confirmation"
+      description: "Medium confidence - use but may confirm in context"
+      confirmation_phrase: "Just to confirm, that's {value}?"
+      
+    low_confidence:
+      threshold: 0.45
+      action: "confirm_before_use"
+      description: "Low confidence - must confirm before using"
+      confirmation_phrase: "I want to make sure I got that right - did you say {value}?"
+      
+    rejection_threshold:
+      threshold: 0.30
+      action: "do_not_use"
+      description: "Below this threshold, do not use the extraction"
+      
+  # ---------------------------------------------------------------------------
+  # Field Collection Rules
+  # ---------------------------------------------------------------------------
+  field_collection_rules:
+    max_questions_per_turn: 2
+    description: "Maximum number of questions to ask in a single turn"
+    
+    required_fields_first: true
+    description_2: "Prioritize required fields over optional fields"
+    
+    natural_flow_priority: true
+    description_3: "Maintain natural conversation flow over strict field order"
+    
+    skip_if_previously_collected: true
+    description_4: "Don't re-ask for information already collected"
+    
+    confirm_ambiguous_values: true
+    description_5: "Confirm values that could be misheard or ambiguous"
+    
+    max_clarification_attempts: 2
+    description_6: "Maximum times to ask for clarification on same field"
+    
+    graceful_skip_after_failures: true
+    description_7: "Move on if customer can't or won't provide a field"
+    
+  # ---------------------------------------------------------------------------
+  # Routing Confidence
+  # ---------------------------------------------------------------------------
+  routing_confidence:
+    high_confidence:
+      threshold: 0.85
+      action: "route_directly"
+      
+    medium_confidence:
+      threshold: 0.65
+      action: "route_with_fallback"
+      
+    low_confidence:
+      threshold: 0.45
+      action: "use_general_handler"
+      
+    fallback_threshold:
+      threshold: 0.45
+      action: "route_to_G8_General"
+      
+  # ---------------------------------------------------------------------------
+  # Intent Priority Order
+  # ---------------------------------------------------------------------------
+  intent_priority_order:
+    description: "Order in which intents are evaluated - higher priority first"
+    order:
+      1: "ai_disclosure"
+      2: "emergency_safety"
+      3: "not_interested"
+      4: "stop_contacting"
+      5: "complaint"
+      6: "objection_handling"
+      7: "appointment"
+      8: "renewal"
+      9: "service_request"
+      10: "cross_sell"
+      11: "qualification"
+      12: "referral"
+      13: "win_back"
+      14: "follow_up"
+      15: "general"
+
+# =============================================================================
+# TRAINING DISTRIBUTION CONFIGURATION
+# =============================================================================
+
+training_distribution:
+  source: "hard_objection_mix.yaml, training configs"
+  
+  # ---------------------------------------------------------------------------
+  # Scenario Type Distribution
+  # ---------------------------------------------------------------------------
+  scenario_types:
+    qualification:
+      target_percentage: 25
+      description: "Standard qualification conversations"
+      modes: ["assistant", "agent"]
+      products: ["auto", "home", "life", "commercial"]
+      
+    objection_handling:
+      target_percentage: 20
+      description: "Conversations with significant objections"
+      modes: ["assistant", "agent"]
+      difficulty_distribution:
+        easy: 0.20
+        medium: 0.50
+        hard: 0.30
+        
+    cross_sell:
+      target_percentage: 15
+      description: "Cross-sell opportunity conversations"
+      modes: ["assistant", "agent"]
+      
+    appointment:
+      target_percentage: 10
+      description: "Appointment scheduling conversations"
+      modes: ["assistant", "agent", "service"]
+      
+    service_request:
+      target_percentage: 10
+      description: "Existing customer service requests"
+      modes: ["service"]
+      
+    win_back:
+      target_percentage: 8
+      description: "Re-engaging churned/lost customers"
+      modes: ["assistant", "agent"]
+      
+    renewal:
+      target_percentage: 7
+      description: "Policy renewal conversations"
+      modes: ["assistant", "agent", "service"]
+      
+    referral:
+      target_percentage: 5
+      description: "Referral request conversations"
+      modes: ["assistant", "agent", "service"]
+      
+  # ---------------------------------------------------------------------------
+  # Hard Objection Training Mix (from hard_objection_mix.yaml)
+  # ---------------------------------------------------------------------------
+  hard_objection_training:
+    total_conversations: 50
+    description: "Distribution for hard objection training data"
+    
+    objection_scenarios:
+      percentage: 60
+      count: 30
+      
+      distribution:
+        price_resistance:
+          count: 8
+          examples:
+            - "WAY too expensive"
+            - "charging $50 more than competitor"
+            - "can't justify that price"
+            
+        competitor_leverage:
+          count: 6
+          examples:
+            - "X company is $40 cheaper"
+            - "got a better quote"
+            
+        need_to_think:
+          count: 5
+          examples:
+            - "need to think about it"
+            - "sleep on it"
+            
+        spouse_objection:
+          count: 5
+          examples:
+            - "talk to spouse first"
+            - "my partner handles this"
+            
+        dont_see_value:
+          count: 4
+          examples:
+            - "don't need all that coverage"
+            - "not worth it"
+            
+        switching_hassle:
+          count: 4
+          examples:
+            - "too much work"
+            - "don't want the hassle"
+            
+        trust_objection:
+          count: 4
+          examples:
+            - "never heard of you"
+            - "how do I know you're legitimate"
+            
+        timing_objection:
+          count: 4
+          examples:
+            - "not a good time"
+            - "too busy right now"
+            
+    follow_up_scenarios:
+      percentage: 40
+      count: 20
+      
+      distribution:
+        quoted_went_cold:
+          count: 10
+          timing: "1-3 weeks ago"
+          scenario: "quote sent, no response"
+          
+        multi_touch_followup:
+          count: 5
+          touch_number: 3
+          scenario: "third outreach attempt"
+          
+        cold_lead_reactivation:
+          count: 5
+          timing: "60-90 days old"
+          scenario: "old lead re-engagement"
+          
+  # ---------------------------------------------------------------------------
+  # Persona Distribution
+  # ---------------------------------------------------------------------------
+  persona_distribution:
+    alex:
+      weight: 0.25
+      description: "Friendly Professional"
+      
+    morgan:
+      weight: 0.20
+      description: "Trusted Expert"
+      
+    jordan:
+      weight: 0.20
+      description: "Efficient Helper"
+      
+    casey:
+      weight: 0.20
+      description: "Patient Guide"
+      
+    riley:
+      weight: 0.15
+      description: "Energetic Enthusiast"
+      
+  # ---------------------------------------------------------------------------
+  # Channel Distribution
+  # ---------------------------------------------------------------------------
+  channel_distribution:
+    voice:
+      weight: 0.30
+      characteristics:
+        - "real-time"
+        - "fillers"
+        - "backchanneling"
+        
+    sms:
+      weight: 0.25
+      characteristics:
+        - "brief"
+        - "casual"
+        - "abbreviations"
+        
+    chat:
+      weight: 0.25
+      characteristics:
+        - "interactive"
+        - "quick_replies"
+        - "typing_indicators"
+        
+    email:
+      weight: 0.20
+      characteristics:
+        - "formal"
+        - "structured"
+        - "longer_form"
+        
+  # ---------------------------------------------------------------------------
+  # Outcome Distribution
+  # ---------------------------------------------------------------------------
+  outcome_distribution:
+    successful:
+      weight: 0.40
+      outcomes:
+        - "qualified_handoff"
+        - "appointment_scheduled"
+        - "cross_sell_accepted"
+        - "referral_obtained"
+        
+    partial_success:
+      weight: 0.25
+      outcomes:
+        - "partial_qualification"
+        - "callback_scheduled"
+        - "information_sent"
+        
+    objection_related:
+      weight: 0.20
+      outcomes:
+        - "objection_resolved"
+        - "objection_unresolved"
+        
+    exit:
+      weight: 0.10
+      outcomes:
+        - "graceful_exit"
+        - "not_interested"
+        
+    escalation:
+      weight: 0.05
+      outcomes:
+        - "escalated_to_human"
+        - "complaint"
+        
+  # ---------------------------------------------------------------------------
+  # Customer Persona Distribution
+  # ---------------------------------------------------------------------------
+  customer_persona_distribution:
+    analytical:
+      weight: 0.30
+      characteristics:
+        - "asks detailed questions"
+        - "wants specifics"
+        - "methodical"
+        
+    risk_averse:
+      weight: 0.20
+      characteristics:
+        - "concerned about coverage gaps"
+        - "wants reassurance"
+        - "cautious"
+        
+    cost_sensitive:
+      weight: 0.20
+      characteristics:
+        - "price focused"
+        - "asks about discounts"
+        - "compares prices"
+        
+    skeptical:
+      weight: 0.16
+      characteristics:
+        - "questions claims"
+        - "wants proof"
+        - "trust issues"
+        
+    decisive:
+      weight: 0.14
+      characteristics:
+        - "quick decisions"
+        - "direct"
+        - "time-conscious"
+        
+  # ---------------------------------------------------------------------------
+  # Turn Count Distribution
+  # ---------------------------------------------------------------------------
+  turn_count_distribution:
+    short:
+      weight: 0.20
+      range: [12, 15]
+      typical_scenarios: ["simple_qualification", "quick_service"]
+      
+    medium:
+      weight: 0.50
+      range: [16, 20]
+      typical_scenarios: ["standard_qualification", "objection_handling"]
+      
+    long:
+      weight: 0.30
+      range: [21, 28]
+      typical_scenarios: ["complex_qualification", "multiple_objections", "cross_sell"]
+      
+  # ---------------------------------------------------------------------------
+  # Quality Tier Distribution
+  # ---------------------------------------------------------------------------
+  quality_tier_distribution:
+    tier_a:
+      weight: 0.70
+      description: "High quality, natural conversation flow"
+      characteristics:
+        - "smooth_transitions"
+        - "natural_language"
+        - "appropriate_empathy"
+        - "correct_field_extraction"
+        
+    tier_b:
+      weight: 0.30
+      description: "Acceptable quality with minor issues"
+      characteristics:
+        - "functional_but_less_natural"
+        - "may_have_awkward_transitions"
+        - "still_achieves_goals"
+        
+  # ---------------------------------------------------------------------------
+  # Industry Distribution
+  # ---------------------------------------------------------------------------
+  industry_distribution:
+    insurance:
+      weight: 0.50
+      products:
+        auto: 0.40
+        home: 0.30
+        life: 0.15
+        commercial: 0.10
+        umbrella: 0.05
+        
+    real_estate:
+      weight: 0.20
+      products:
+        buyer: 0.50
+        seller: 0.35
+        rental: 0.15
+        
+    financial_services:
+      weight: 0.16
+      products:
+        mortgage: 0.60
+        investment: 0.40
+        
+    mortgage:
+      weight: 0.14
+
+# =============================================================================
+# SLM ROUTING CONFIGURATION
+# =============================================================================
+
+slm_routing:
+  source: "classifier.py, router configurations"
+  
+  # ---------------------------------------------------------------------------
+  # Understanding SLMs (Intent & Entity Recognition)
+  # ---------------------------------------------------------------------------
+  understanding_slms:
+    - id: "intent_classifier"
+      purpose: "Classify customer intent from utterance"
+      model_base: "fine-tuned classification model"
+      priority_checking:
+        - "ai_disclosure"
+        - "not_interested"
+        - "objection"
+        - "booking"
+        - "inquiry"
+      confidence_threshold: 0.65
+      
+    - id: "entity_extractor"
+      purpose: "Extract named entities from text"
+      entity_types:
+        - "person_name"
+        - "company_name"
+        - "location"
+        - "date"
+        - "time"
+        - "money"
+        - "phone"
+        - "email"
+        
+    - id: "field_extractor"
+      purpose: "Extract qualification field values"
+      source: "field_extractors.py (3116 lines)"
+      capabilities:
+        - "vehicle_information"
+        - "address_parsing"
+        - "date_extraction"
+        - "currency_parsing"
+        - "boolean_inference"
+        - "name_extraction"
+        
+    - id: "objection_detector"
+      purpose: "Detect and classify objections"
+      categories: 10
+      sub_types: 31
+      outputs:
+        - "objection_category"
+        - "objection_sub_type"
+        - "confidence_score"
+        - "suggested_response_strategy"
+        
+    - id: "signal_detector"
+      purpose: "Detect buying signals and life events"
+      signal_types:
+        - "high_intent"
+        - "medium_intent"
+        - "negative"
+        - "life_event"
+      outputs:
+        - "signal_id"
+        - "confidence"
+        - "urgency_level"
+        
+  # ---------------------------------------------------------------------------
+  # Generation SLMs (Response Generation)
+  # ---------------------------------------------------------------------------
+  generation_slms:
+    - id: "G1_Qualification"
+      purpose: "Natural information gathering"
+      use_cases:
+        - "asking_qualification_questions"
+        - "field_collection"
+        - "clarification_requests"
+      inputs:
+        - "collected_fields"
+        - "remaining_fields"
+        - "conversation_context"
+        - "persona"
+        - "channel"
+      outputs:
+        - "next_question"
+        - "acknowledgment"
+        - "transition"
+        
+    - id: "G2_Objection"
+      purpose: "Objection detection and response"
+      use_cases:
+        - "objection_acknowledgment"
+        - "objection_response"
+        - "recovery_attempts"
+      inputs:
+        - "objection_category"
+        - "objection_sub_type"
+        - "recovery_attempt_number"
+        - "persona"
+        - "channel"
+      outputs:
+        - "empathy_statement"
+        - "response_strategy_execution"
+        - "next_action"
+        
+    - id: "G3_CrossSell"
+      purpose: "Cross-sell opportunity handling"
+      use_cases:
+        - "seed_planting"
+        - "cross_sell_pitch"
+        - "bundle_offering"
+      inputs:
+        - "primary_product"
+        - "target_product"
+        - "trigger_type"
+        - "relevance_score"
+        - "channel"
+      outputs:
+        - "seed_message"
+        - "follow_up_question"
+        
+    - id: "G4_Referral"
+      purpose: "Referral request handling"
+      use_cases:
+        - "referral_ask"
+        - "referral_follow_up"
+        - "referral_thank_you"
+      inputs:
+        - "conversation_outcome"
+        - "customer_satisfaction"
+        - "persona"
+      outputs:
+        - "referral_request"
+        - "referral_capture"
+        
+    - id: "G5_WinBack"
+      purpose: "Re-engage churned customers"
+      use_cases:
+        - "cold_lead_reactivation"
+        - "lost_opportunity_follow_up"
+        - "lapsed_customer_outreach"
+      inputs:
+        - "churn_reason"
+        - "time_since_last_contact"
+        - "previous_interactions"
+      outputs:
+        - "re_engagement_message"
+        - "new_value_proposition"
+        
+    - id: "G6_Renewal"
+      purpose: "Renewal conversation handling"
+      use_cases:
+        - "renewal_reminder"
+        - "renewal_discussion"
+        - "coverage_review"
+      inputs:
+        - "policy_details"
+        - "renewal_date"
+        - "coverage_changes"
+      outputs:
+        - "renewal_pitch"
+        - "review_questions"
+        
+    - id: "G7_Appointment"
+      purpose: "Appointment scheduling"
+      use_cases:
+        - "appointment_offer"
+        - "time_negotiation"
+        - "confirmation"
+        - "rescheduling"
+      inputs:
+        - "available_slots"
+        - "customer_preferences"
+        - "appointment_type"
+      outputs:
+        - "appointment_offer"
+        - "confirmation_message"
+        - "calendar_entry"
+        
+    - id: "G8_General"
+      purpose: "General conversation and fallback"
+      use_cases:
+        - "small_talk"
+        - "unclear_intent"
+        - "general_questions"
+        - "fallback_handler"
+      inputs:
+        - "conversation_context"
+        - "persona"
+        - "channel"
+      outputs:
+        - "general_response"
+        - "clarification_request"
+        - "redirect"
+
+# =============================================================================
+# UI CONTROLS CONFIGURATION
+# =============================================================================
+
+ui_controls:
+  source: "sales_intelligence.yaml, UI schemas"
+  
+  adjustable_parameters:
+    - name: "aggressiveness_level"
+      type: "slider"
+      range: [1, 10]
+      default: 5
+      step: 1
+      description: "How assertive should the AI be? 1=Passive, 10=Aggressive"
+      display_labels:
+        1: "Very Passive"
+        3: "Consultative"
+        5: "Balanced"
+        7: "Assertive"
+        10: "Aggressive"
+      mode_caps:
+        assistant: 4
+        agent: 10
+        service: 2
+      ui_component: "slider_with_labels"
+      
+    - name: "preferred_methodology"
+      type: "dropdown"
+      options:
+        - id: "spin"
+          display: "SPIN Selling"
+        - id: "bant"
+          display: "BANT"
+        - id: "challenger"
+          display: "Challenger Sale"
+        - id: "sandler"
+          display: "Sandler"
+        - id: "consultative"
+          display: "Consultative"
+        - id: "value_selling"
+          display: "Value Selling"
+        - id: "mixed"
+          display: "Mixed/Adaptive"
+      default: "mixed"
+      description: "Sales methodology to emphasize"
+      ui_component: "dropdown"
+      
+    - name: "buying_signal_sensitivity"
+      type: "slider"
+      range: [1, 10]
+      default: 7
+      step: 1
+      description: "How quickly should AI act on buying signals?"
+      display_labels:
+        1: "Very Conservative"
+        5: "Moderate"
+        10: "Very Responsive"
+      ui_component: "slider_with_labels"
+      
+    - name: "speed_to_lead_sla"
+      type: "dropdown"
+      options:
+        - id: "2min"
+          display: "2 minutes (Critical)"
+        - id: "5min"
+          display: "5 minutes (Urgent)"
+        - id: "10min"
+          display: "10 minutes (Standard)"
+        - id: "30min"
+          display: "30 minutes (Relaxed)"
+      default: "5min"
+      description: "Target response time for hot leads"
+      ui_component: "dropdown"
+      
+    - name: "pressure_tactics_allowed"
+      type: "multi_select"
+      options:
+        - id: "urgency"
+          display: "Urgency"
+          description: "Time-based pressure"
+        - id: "scarcity"
+          display: "Scarcity"
+          description: "Limited availability"
+        - id: "fomo"
+          display: "FOMO"
+          description: "Fear of missing out"
+        - id: "authority"
+          display: "Authority"
+          description: "Expert positioning"
+        - id: "social_proof"
+          display: "Social Proof"
+          description: "What others are doing"
+      default: ["urgency", "social_proof"]
+      description: "Which pressure tactics can AI use?"
+      mode_restrictions:
+        assistant: ["social_proof"]
+        service: []
+      ui_component: "checkbox_group"
+      
+    - name: "minimum_discovery_turns"
+      type: "number"
+      range: [2, 10]
+      default: 4
+      step: 1
+      description: "Minimum turns spent on discovery before presenting"
+      ui_component: "number_input"
+      
+    - name: "cross_sell_enabled"
+      type: "toggle"
+      default: true
+      description: "Enable cross-sell opportunities during conversation"
+      ui_component: "toggle_switch"
+      
+    - name: "cross_sell_timing"
+      type: "dropdown"
+      options:
+        - id: "immediate"
+          display: "Immediate"
+        - id: "after_field"
+          display: "After Triggering Field"
+        - id: "end_of_qualification"
+          display: "End of Qualification"
+        - id: "follow_up"
+          display: "Follow-up Only"
+      default: "after_field"
+      description: "When to introduce cross-sell opportunities"
+      depends_on: "cross_sell_enabled"
+      ui_component: "dropdown"
+      
+    - name: "cross_sell_max_attempts"
+      type: "number"
+      range: [1, 5]
+      default: 2
+      step: 1
+      description: "Maximum cross-sell attempts per conversation"
+      depends_on: "cross_sell_enabled"
+      ui_component: "number_input"
+      
+    - name: "persona_selection"
+      type: "dropdown"
+      options:
+        - id: "auto"
+          display: "Auto-Select"
+          description: "System chooses based on context"
+        - id: "alex"
+          display: "Alex (Friendly Professional)"
+        - id: "morgan"
+          display: "Morgan (Trusted Expert)"
+        - id: "jordan"
+          display: "Jordan (Efficient Helper)"
+        - id: "casey"
+          display: "Casey (Patient Guide)"
+        - id: "riley"
+          display: "Riley (Energetic Enthusiast)"
+      default: "auto"
+      description: "AI persona to use"
+      ui_component: "dropdown_with_descriptions"
+      
+    - name: "objection_persistence"
+      type: "slider"
+      range: [1, 5]
+      default: 2
+      step: 1
+      description: "How many times to attempt objection recovery"
+      display_labels:
+        1: "Give up quickly"
+        3: "Moderate persistence"
+        5: "Very persistent"
+      ui_component: "slider_with_labels"
+      
+    - name: "referral_ask_enabled"
+      type: "toggle"
+      default: true
+      description: "Ask for referrals at end of successful conversations"
+      ui_component: "toggle_switch"
+
+# =============================================================================
+# TEMPLATE VARIABLES REFERENCE (Complete)
+# =============================================================================
+
+template_variables:
+  description: "Complete reference of all template variables available in the system"
+  
+  user_variables:
+    description: "Variables related to the tenant user (broker/agent)"
+    
+    - variable: "${user.id}"
+      source: "tenant.user.id"
+      description: "Unique user identifier"
+      
+    - variable: "${user.first_name}"
+      source: "tenant.user.first_name"
+      description: "User's first name"
+      example: "John"
+      
+    - variable: "${user.last_name}"
+      source: "tenant.user.last_name"
+      description: "User's last name"
+      example: "Smith"
+      
+    - variable: "${user.full_name}"
+      source: "tenant.user.full_name"
+      description: "User's full name"
+      example: "John Smith"
+      
+    - variable: "${user.display_name}"
+      source: "tenant.user.display_name"
+      description: "How user wants to be addressed"
+      example: "John"
+      note: "May be first name, nickname, or full name"
+      
+    - variable: "${user.title}"
+      source: "tenant.user.title"
+      description: "User's professional title"
+      examples: ["Insurance Advisor", "Real Estate Agent", "Broker"]
+      
+    - variable: "${user.email}"
+      source: "tenant.user.email"
+      description: "User's email address"
+      
+    - variable: "${user.office_phone}"
+      source: "tenant.user.office_phone"
+      description: "User's office phone number"
+      
+    - variable: "${user.cell_phone}"
+      source: "tenant.user.cell_phone"
+      description: "User's mobile phone number"
+      
+    - variable: "${user.license_number}"
+      source: "tenant.user.license_number"
+      description: "User's professional license number"
+      
+  company_variables:
+    description: "Variables related to the tenant company"
+    
+    - variable: "${company.id}"
+      source: "tenant.company.id"
+      description: "Unique company identifier"
+      
+    - variable: "${company.name}"
+      source: "tenant.company.name"
+      description: "Company name"
+      example: "ABC Insurance Brokerage"
+      
+    - variable: "${company.main_phone}"
+      source: "tenant.company.main_phone"
+      description: "Company main phone number"
+      
+    - variable: "${company.toll_free}"
+      source: "tenant.company.toll_free"
+      description: "Company toll-free number"
+      
+    - variable: "${company.website}"
+      source: "tenant.company.website"
+      description: "Company website URL"
+      
+    - variable: "${company.email}"
+      source: "tenant.company.email"
+      description: "Company email address"
+      
+  ai_variables:
+    description: "Variables related to the AI assistant"
+    
+    - variable: "${ai.name}"
+      source: "tenant.ai.name"
+      description: "AI assistant's name"
+      default: "Alex"
+      examples: ["Alex", "Morgan", "Jordan", "Casey", "Riley"]
+      
+  pronoun_variables:
+    description: "Pronoun variables for gender-neutral communication"
+    
+    - variable: "${pronoun}"
+      source: "tenant.user.pronoun_subject"
+      description: "Subject pronoun (lowercase)"
+      options: ["he", "she", "they"]
+      default: "they"
+      example_usage: "${pronoun} will call you back"
+      
+    - variable: "${pronoun_cap}"
+      source: "tenant.user.pronoun_subject_cap"
+      description: "Subject pronoun (capitalized)"
+      options: ["He", "She", "They"]
+      default: "They"
+      example_usage: "${pronoun_cap} is available tomorrow"
+      
+    - variable: "${pronoun_object}"
+      source: "tenant.user.pronoun_object"
+      description: "Object pronoun"
+      options: ["him", "her", "them"]
+      default: "them"
+      example_usage: "I'll have ${pronoun_object} call you"
+      
+    - variable: "${pronoun_possessive}"
+      source: "tenant.user.pronoun_possessive"
+      description: "Possessive pronoun"
+      options: ["his", "her", "their"]
+      default: "their"
+      example_usage: "${pronoun_possessive} calendar is open"
+      
+  dynamic_variables:
+    description: "Variables populated dynamically during conversation"
+    
+    - variable: "${customer_name}"
+      source: "extracted from conversation"
+      description: "Customer's name"
+      
+    - variable: "${agent_type}"
+      source: "context"
+      description: "Type of agent (insurance broker, real estate agent, etc.)"
+      
+    - variable: "${product}"
+      source: "context"
+      description: "Current product being discussed"
+      
+    - variable: "${response_time}"
+      source: "tenant.response_time.standard"
+      description: "Expected response time"
+      default: "24 hours"
+      
+    - variable: "${timeframe}"
+      source: "extracted from conversation"
+      description: "Customer's timeline"
+      
+    - variable: "${appointment_time}"
+      source: "scheduled appointment"
+      description: "Scheduled appointment date/time"
+      
+    - variable: "${day}"
+      source: "system"
+      description: "Day of week"
+      
+    - variable: "${time}"
+      source: "system"
+      description: "Current time"
+      
+    - variable: "${date}"
+      source: "system"
+      description: "Current date"
+      
+    - variable: "${time_of_day}"
+      source: "system"
+      description: "Time of day greeting"
+      options: ["morning", "afternoon", "evening"]
+      
+    - variable: "${next_available}"
+      source: "calendar"
+      description: "Next available time slot"
+      example: "tomorrow at 10am"
+      
+    - variable: "${location}"
+      source: "extracted or tenant"
+      description: "Relevant location"
+      
+    - variable: "${document_type}"
+      source: "context"
+      description: "Type of document requested"
+      
+    - variable: "${expiry_date}"
+      source: "quote/policy"
+      description: "Quote or offer expiration date"
+
+# =============================================================================
+# REGISTRY SUMMARY & INDEX
+# =============================================================================
+
+registry_summary:
+  version: "2.0"
+  generated_date: "2025-01-08"
+  total_parts: 5
+  
+  part_index:
+    part_1:
+      filename: "COMPREHENSIVE_REGISTRY_PART1.yaml"
+      size: "~58KB"
+      contents:
+        - "Core Enums & Data Types (15 types)"
+        - "Universal Fields (16 fields with extraction patterns)"
+        - "Auto Insurance Fields (all required/optional with patterns)"
+        
+    part_2:
+      filename: "COMPREHENSIVE_REGISTRY_PART2.yaml"
+      size: "~62KB"
+      contents:
+        - "Home Insurance Fields (comprehensive)"
+        - "Life Insurance Fields (comprehensive)"
+        - "Commercial Insurance Fields"
+        - "Umbrella Insurance Fields"
+        - "Real Estate Fields (Buyer, Seller, Rental)"
+        
+    part_3:
+      filename: "COMPREHENSIVE_REGISTRY_PART3.yaml"
+      size: "~70KB"
+      contents:
+        - "AI Mode Configuration (3 modes detailed)"
+        - "Channel Configuration (4 channels detailed)"
+        - "Persona Configuration (5 personas)"
+        - "Sales Intelligence (aggressiveness, tactics, methodologies)"
+        - "Buying Signals"
+        
+    part_4:
+      filename: "COMPREHENSIVE_REGISTRY_PART4.yaml"
+      size: "~71KB"
+      contents:
+        - "Objection Categories (10 categories, 31 sub-types)"
+        - "Life Events & Signals (8 events)"
+        - "Cross-Sell Configuration"
+        - "Cross-Industry Referrals"
+        - "Callback Scenarios"
+        - "Service Requests"
+        
+    part_5:
+      filename: "COMPREHENSIVE_REGISTRY_PART5.yaml"
+      size: "~65KB"
+      contents:
+        - "Compliance & Safety Configuration"
+        - "PII Handling Rules"
+        - "Industry-Specific Compliance"
+        - "AI Disclosure Requirements"
+        - "Quality & Training Parameters"
+        - "Training Distribution Configuration"
+        - "SLM Routing Configuration"
+        - "UI Controls Configuration"
+        - "Template Variables Reference"
+        
+  total_elements:
+    enums: 15
+    universal_fields: 16
+    insurance_fields: "200+"
+    real_estate_fields: "50+"
+    ai_modes: 3
+    channels: 4
+    personas: 5
+    persuasion_tactics: 15
+    sales_methodologies: 6
+    objection_categories: 10
+    objection_sub_types: 31
+    life_events: 8
+    cross_sell_rules: 8
+    service_request_types: 14
+    ui_controls: 12
+    template_variables: "50+"
+    
+  estimated_total_size: "~326KB"
+
+# =============================================================================
+# END OF COMPREHENSIVE PLATFORM FIELD REGISTRY V2.0
+# =============================================================================

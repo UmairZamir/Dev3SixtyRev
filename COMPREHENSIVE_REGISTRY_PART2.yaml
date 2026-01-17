@@ -1,0 +1,1994 @@
+# =============================================================================
+# COMPREHENSIVE PLATFORM FIELD REGISTRY V2.0 - PART 2 OF 5
+# =============================================================================
+# Generated: 2025-01-08
+# Source Files: field_extractors.py (3116 lines), products/*.yaml, 
+#               cross_sell_engine.py, cross_sell_rules.py
+#
+# This file contains:
+# - Home Insurance Fields (comprehensive)
+# - Life Insurance Fields (comprehensive)
+# - Commercial Insurance Fields
+# - Umbrella Insurance Fields
+# - Real Estate Industry Fields (Buyer, Seller, Rental)
+# =============================================================================
+
+# =============================================================================
+# HOME INSURANCE FIELDS
+# =============================================================================
+
+home_insurance:
+  product_id: "home_insurance"
+  display_name: "Home Insurance"
+  category: "personal_lines"
+  
+  required_fields:
+    - field_id: "property_address"
+      display_name: "Property Address"
+      field_type: "address"
+      priority: 1
+      components:
+        - street_address
+        - city
+        - province_state
+        - postal_code
+      source: "field_extractors.py lines 1101-1144"
+      
+    - field_id: "property_type"
+      display_name: "Property Type"
+      field_type: "select"
+      priority: 1
+      
+      options:
+        - id: "single_family"
+          display: "Single Family Home"
+          description: "Detached single-family residence"
+          typical_fields: ["year_built", "square_footage", "lot_size", "stories"]
+          
+        - id: "condo"
+          display: "Condominium"
+          description: "Condo unit within larger building"
+          typical_fields: ["year_built", "square_footage", "floor_number", "hoa_fee"]
+          requires_hoa_master_policy: true
+          
+        - id: "townhouse"
+          display: "Townhouse"
+          description: "Attached townhouse/row house"
+          typical_fields: ["year_built", "square_footage", "stories", "attached_units"]
+          
+        - id: "duplex"
+          display: "Duplex"
+          description: "Two-unit dwelling"
+          typical_fields: ["year_built", "square_footage", "rental_income"]
+          may_require_landlord_policy: true
+          
+        - id: "mobile_home"
+          display: "Mobile Home"
+          description: "Mobile/manufactured home"
+          typical_fields: ["year_built", "square_footage", "land_owned", "park_name"]
+          specialized_coverage: true
+          
+        - id: "multi_family"
+          display: "Multi-Family (2-4 units)"
+          description: "Small multi-family dwelling"
+          typical_fields: ["year_built", "square_footage", "unit_count", "rental_income"]
+          may_require_landlord_policy: true
+          
+    - field_id: "ownership_type"
+      display_name: "Ownership Type"
+      field_type: "select"
+      priority: 2
+      
+      options:
+        - id: "owner_occupied"
+          display: "Owner Occupied"
+          description: "Primary residence"
+          coverage_type: "homeowners"
+          
+        - id: "rental"
+          display: "Rental Property"
+          description: "Rented to tenants"
+          coverage_type: "landlord"
+          additional_coverage: ["loss_of_rent", "tenant_liability"]
+          
+        - id: "vacation_home"
+          display: "Vacation Home"
+          description: "Secondary/vacation residence"
+          coverage_type: "secondary_home"
+          occupancy_considerations: true
+          
+        - id: "investment"
+          display: "Investment Property"
+          description: "Investment/flip property"
+          coverage_type: "investor"
+          may_require_builders_risk: true
+          
+    - field_id: "year_built"
+      display_name: "Year Built"
+      field_type: "year"
+      priority: 2
+      source: "field_extractors.py lines 2081-2140"
+      
+      extraction_patterns:
+        explicit_built:
+          patterns:
+            - "(?:built|constructed)\\s+(?:in\\s+)?(\\d{4})"
+            - "(?:home|house)\\s+(?:from|built\\s+in)\\s+(\\d{4})"
+            - "year\\s+built\\s*(?:is|:)?\\s*(\\d{4})"
+          confidence: 0.95
+          
+        context_based:
+          patterns:
+            - "(?:it's|it is)\\s+(?:a\\s+)?(\\d{4})\\s+(?:home|house|build)"
+            - "(\\d{4})\\s+(?:construction|build)"
+          confidence: 0.85
+          
+      valid_range: [1800, 2030]
+      
+      # Guards to prevent vehicle year confusion
+      context_patterns:
+        positive:
+          - "built"
+          - "construction"
+          - "home from"
+          - "house from"
+          - "constructed"
+          - "year built"
+        negative:
+          - "car"
+          - "vehicle"
+          - "truck"
+          - "suv"
+          - "drive"
+          - "driving"
+          - "model"
+          
+      premium_impact:
+        ranges:
+          pre_1950: "higher_risk"
+          1950_1979: "moderate_risk"
+          1980_1999: "standard"
+          2000_plus: "preferred"
+          
+    - field_id: "square_footage"
+      display_name: "Square Footage"
+      field_type: "number"
+      priority: 2
+      source: "field_extractors.py lines 2142-2175"
+      
+      extraction_patterns:
+        - "(\\d{1,5})\\s*(?:sq\\.?\\s*ft\\.?|square\\s*feet|sqft)"
+        - "(?:home|house)\\s+(?:is\\s+)?(?:about\\s+)?(\\d{1,5})\\s*(?:sq|square)"
+        
+      valid_range: [200, 50000]
+      
+      typical_ranges_by_type:
+        condo: [400, 3000]
+        townhouse: [800, 3500]
+        single_family: [800, 10000]
+        multi_family: [1500, 15000]
+        
+    - field_id: "dwelling_coverage"
+      display_name: "Dwelling Coverage Amount"
+      field_type: "currency"
+      priority: 2
+      description: "Coverage A - Dwelling coverage amount"
+      
+      calculation_methods:
+        - "replacement_cost_estimator"
+        - "cost_per_square_foot"
+        - "market_value_adjustment"
+        
+      typical_ranges:
+        minimum: 100000
+        average: 350000
+        high_value: 1000000
+        
+  optional_fields:
+    - field_id: "roof_type"
+      display_name: "Roof Type"
+      field_type: "select"
+      priority: 3
+      source: "field_extractors.py lines 2177-2230"
+      premium_impact: "moderate"
+      
+      options:
+        - id: "asphalt_shingle"
+          display: "Asphalt Shingle"
+          indicators: ["asphalt", "shingle", "asphalt shingle", "composition", "comp shingle", "architectural shingle", "3-tab"]
+          typical_lifespan_years: 20
+          premium_modifier: 1.0
+          
+        - id: "tile"
+          display: "Tile (Clay/Concrete)"
+          indicators: ["tile", "clay tile", "concrete tile", "spanish tile", "terracotta"]
+          typical_lifespan_years: 50
+          premium_modifier: 0.95
+          
+        - id: "metal"
+          display: "Metal"
+          indicators: ["metal", "steel", "aluminum", "standing seam", "tin", "metal roof"]
+          typical_lifespan_years: 40
+          premium_modifier: 0.90
+          hail_resistant: true
+          
+        - id: "flat"
+          display: "Flat/Built-Up"
+          indicators: ["flat", "flat roof", "built-up", "tar and gravel", "tpo", "epdm", "rubber"]
+          typical_lifespan_years: 15
+          premium_modifier: 1.10
+          drainage_considerations: true
+          
+        - id: "wood_shake"
+          display: "Wood Shake"
+          indicators: ["wood shake", "shake", "cedar shake", "wood shingle"]
+          typical_lifespan_years: 25
+          premium_modifier: 1.20
+          fire_risk: "elevated"
+          
+        - id: "slate"
+          display: "Slate"
+          indicators: ["slate", "natural slate"]
+          typical_lifespan_years: 75
+          premium_modifier: 0.85
+          high_value: true
+          
+    - field_id: "roof_age"
+      display_name: "Roof Age (Years)"
+      field_type: "number"
+      priority: 3
+      source: "field_extractors.py lines 2232-2290"
+      premium_impact: "high"
+      
+      extraction_patterns:
+        age_statement:
+          patterns:
+            - "roof\\s+(?:is\\s+)?(?:about|around|approximately)?\\s*(\\d+)\\s*(?:year|yr)s?\\s*old"
+            - "roof\\s+(?:age|replaced)\\s*(?:is|:)?\\s*(\\d+)"
+            - "(\\d+)\\s*(?:year|yr)\\s*(?:old)?\\s*roof"
+          confidence: 0.90
+          
+        replacement_calculation:
+          patterns:
+            - "roof\\s+(?:was\\s+)?replaced\\s+(?:about|around)?\\s*(\\d+)\\s*(?:year|yr)s?\\s*ago"
+            - "(?:new|replaced)\\s+roof\\s+in\\s+(\\d{4})"
+          confidence: 0.90
+          
+      new_roof_indicators:
+        patterns: ["new roof", "brand new roof", "just replaced", "replaced this year", "new in 2024"]
+        value: 0
+        
+      semantic_trigger: "roof"
+      valid_range: [0, 50]
+      
+      underwriting_thresholds:
+        preferred: [0, 10]
+        standard: [11, 20]
+        substandard: [21, 30]
+        may_decline: [31, 50]
+        
+    - field_id: "construction_type"
+      display_name: "Construction Type"
+      field_type: "select"
+      priority: 3
+      source: "field_extractors.py lines 2417-2470"
+      premium_impact: "moderate"
+      
+      options:
+        - id: "frame"
+          display: "Frame/Wood Frame"
+          indicators: ["frame", "wood frame", "wood", "stick built", "stick-built"]
+          fire_resistance: "low"
+          premium_modifier: 1.0
+          
+        - id: "brick"
+          display: "Brick"
+          indicators: ["brick", "all brick", "brick veneer", "solid brick"]
+          fire_resistance: "high"
+          premium_modifier: 0.90
+          
+        - id: "stucco"
+          display: "Stucco"
+          indicators: ["stucco", "stucco exterior"]
+          fire_resistance: "moderate"
+          premium_modifier: 0.95
+          moisture_considerations: true
+          
+        - id: "stone"
+          display: "Stone"
+          indicators: ["stone", "natural stone", "stone veneer"]
+          fire_resistance: "high"
+          premium_modifier: 0.85
+          
+        - id: "concrete"
+          display: "Concrete/Block"
+          indicators: ["concrete", "concrete block", "cinder block", "cmu", "masonry"]
+          fire_resistance: "very_high"
+          premium_modifier: 0.85
+          hurricane_resistant: true
+          
+        - id: "steel"
+          display: "Steel Frame"
+          indicators: ["steel", "metal frame", "steel frame"]
+          fire_resistance: "high"
+          premium_modifier: 0.90
+          
+        - id: "log"
+          display: "Log Home"
+          indicators: ["log", "log home", "log cabin"]
+          fire_resistance: "low"
+          premium_modifier: 1.15
+          specialized_coverage: true
+          
+        - id: "modular"
+          display: "Modular/Prefab"
+          indicators: ["modular", "prefab", "manufactured", "prefabricated"]
+          fire_resistance: "varies"
+          premium_modifier: 1.05
+          
+    - field_id: "stories"
+      display_name: "Number of Stories"
+      field_type: "number"
+      priority: 3
+      source: "field_extractors.py lines 2472-2510"
+      
+      semantic_triggers:
+        - "story"
+        - "stories"
+        - "floor"
+        - "floors"
+        - "level"
+        - "levels"
+        
+      word_to_number_mappings:
+        single: 1
+        one: 1
+        two: 2
+        three: 3
+        four: 4
+        five: 5
+        split: 1.5
+        bi-level: 2
+        tri-level: 3
+        
+      valid_range: [1, 10]
+      
+    - field_id: "heating_type"
+      display_name: "Heating Type"
+      field_type: "select"
+      priority: 4
+      source: "field_extractors.py lines 2512-2542"
+      premium_impact: "low_to_moderate"
+      
+      options:
+        - id: "gas"
+          display: "Natural Gas"
+          indicators: ["gas heat", "natural gas", "gas furnace", "forced air gas"]
+          risk_level: "standard"
+          
+        - id: "electric"
+          display: "Electric"
+          indicators: ["electric heat", "electric furnace", "baseboard", "electric baseboard", "heat strips"]
+          risk_level: "standard"
+          
+        - id: "oil"
+          display: "Oil"
+          indicators: ["oil heat", "oil furnace", "heating oil", "oil burner"]
+          risk_level: "moderate"
+          tank_considerations: true
+          
+        - id: "propane"
+          display: "Propane"
+          indicators: ["propane", "lp gas", "propane furnace"]
+          risk_level: "moderate"
+          tank_considerations: true
+          
+        - id: "heat_pump"
+          display: "Heat Pump"
+          indicators: ["heat pump", "mini split", "ductless"]
+          risk_level: "low"
+          energy_efficient: true
+          
+        - id: "radiant"
+          display: "Radiant"
+          indicators: ["radiant", "radiant floor", "in-floor", "hydronic"]
+          risk_level: "low"
+          
+        - id: "boiler"
+          display: "Boiler/Hot Water"
+          indicators: ["boiler", "hot water heat", "steam heat", "radiator"]
+          risk_level: "moderate"
+          age_considerations: true
+          
+        - id: "wood"
+          display: "Wood/Pellet"
+          indicators: ["wood stove", "wood burning", "pellet stove", "fireplace only"]
+          risk_level: "elevated"
+          fire_risk: true
+          
+        - id: "geothermal"
+          display: "Geothermal"
+          indicators: ["geothermal", "ground source", "geo heat"]
+          risk_level: "low"
+          energy_efficient: true
+          
+    - field_id: "security_system"
+      display_name: "Has Security System"
+      field_type: "boolean"
+      priority: 3
+      source: "field_extractors.py lines 2330-2370"
+      discount_eligible: true
+      discount_range: "5-15%"
+      
+      positive_indicators:
+        - "have alarm"
+        - "have a alarm"
+        - "have security"
+        - "have a security"
+        - "security system"
+        - "alarm system"
+        - "monitored"
+        - "adt"
+        - "ring alarm"
+        - "simplisafe"
+        - "vivint"
+        - "brinks"
+        - "home security"
+        - "burglar alarm"
+        
+      negative_indicators:
+        - "no alarm"
+        - "no security"
+        - "don't have alarm"
+        - "dont have alarm"
+        - "don't have security"
+        - "no security system"
+        - "not monitored"
+        
+      discount_tiers:
+        local_alarm: "5%"
+        monitored_alarm: "10%"
+        monitored_with_fire: "15%"
+        smart_home_package: "15-20%"
+        
+    - field_id: "pool_trampoline"
+      display_name: "Pool/Trampoline"
+      field_type: "select"
+      priority: 4
+      source: "field_extractors.py lines 2372-2415"
+      liability_impact: true
+      
+      options:
+        - id: "none"
+          display: "None"
+          liability_increase: 0
+          
+        - id: "pool_inground"
+          display: "In-Ground Pool"
+          indicators: ["in-ground pool", "inground pool", "swimming pool", "pool"]
+          liability_increase: "moderate"
+          fencing_required: true
+          
+        - id: "pool_above_ground"
+          display: "Above-Ground Pool"
+          indicators: ["above-ground pool", "above ground pool"]
+          liability_increase: "low_to_moderate"
+          
+        - id: "hot_tub"
+          display: "Hot Tub/Spa"
+          indicators: ["hot tub", "spa", "jacuzzi"]
+          liability_increase: "low"
+          
+        - id: "trampoline"
+          display: "Trampoline"
+          indicators: ["trampoline"]
+          liability_increase: "high"
+          may_require_exclusion: true
+          
+        - id: "pool_and_trampoline"
+          display: "Both Pool and Trampoline"
+          liability_increase: "high"
+          
+    - field_id: "claim_history"
+      display_name: "Claims History (Last 5 Years)"
+      field_type: "select"
+      priority: 2
+      source: "field_extractors.py lines 2292-2328"
+      premium_impact: "high"
+      
+      options:
+        - id: "none"
+          display: "No Claims"
+          indicators: ["no claim", "claim free", "never filed", "zero claim", "0 claim", "haven't filed", "never had a claim", "clean record"]
+          premium_modifier: 1.0
+          
+        - id: "1_claim"
+          display: "1 Claim"
+          indicators: ["one claim", "1 claim", "single claim", "filed once", "had one"]
+          premium_modifier: 1.15
+          
+        - id: "2_plus_claims"
+          display: "2+ Claims"
+          indicators: ["multiple claim", "2 claim", "two claim", "3 claim", "several claim", "few claim", "2+ claim"]
+          premium_modifier: 1.35
+          may_require_review: true
+          
+      claim_types_tracked:
+        - water_damage
+        - fire_damage
+        - theft
+        - liability
+        - weather_related
+        - other
+        
+    - field_id: "home_age"
+      display_name: "Home Age (Years)"
+      field_type: "number"
+      priority: 3
+      source: "field_extractors.py lines 2591-2630"
+      calculated_from: "year_built"
+      
+      semantic_triggers:
+        - "years old"
+        - "year old"
+        - "built"
+        - "construction"
+        - "home age"
+        - "house age"
+        
+      extraction_patterns:
+        - "(?:home|house)\\s+(?:is\\s+)?(?:about\\s+)?(\\d+)\\s*(?:year|yr)s?\\s*old"
+        - "(\\d+)\\s*(?:year|yr)\\s*old\\s+(?:home|house)"
+        
+      valid_range: [0, 200]
+
+  cross_sell_triggers:
+    - trigger_field: "dwelling_coverage"
+      condition: "greater_than"
+      trigger_value: 750000
+      target_product: "umbrella_insurance"
+      relevance_score: 75
+      seed_message: "With a home of this value, umbrella insurance provides an extra layer of protection."
+      
+    - trigger_field: "has_vehicle"
+      trigger_value: true
+      target_product: "auto_insurance"
+      relevance_score: 85
+      bundle_discount: "15-25%"
+      seed_message: "Do you have auto insurance as well? Bundling home and auto typically saves 15-25%."
+      
+    - trigger_field: "pool_trampoline"
+      condition: "not_equals"
+      trigger_value: "none"
+      target_product: "umbrella_insurance"
+      relevance_score: 80
+      seed_message: "With a pool/trampoline, umbrella coverage provides extra liability protection."
+
+# =============================================================================
+# LIFE INSURANCE FIELDS
+# =============================================================================
+
+life_insurance:
+  product_id: "life_insurance"
+  display_name: "Life Insurance"
+  category: "personal_lines"
+  
+  required_fields:
+    - field_id: "applicant_dob"
+      display_name: "Date of Birth"
+      field_type: "date"
+      priority: 1
+      sensitivity: "high"
+      
+      extraction_patterns:
+        # Same as auto insurance DOB extraction
+        iso_format:
+          pattern: "(\\d{4}-\\d{2}-\\d{2})"
+          confidence: 0.95
+          
+        numeric_date:
+          pattern: "(\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4})"
+          confidence: 0.90
+          
+        age_calculation:
+          pattern: "(?:i'?m|i am|age)\\s*(\\d{2})\\b"
+          type: "calculate_from_age"
+          
+      valid_age_range: [18, 85]
+      
+      underwriting_age_bands:
+        - range: [18, 30]
+          risk_class: "preferred"
+        - range: [31, 45]
+          risk_class: "standard_plus"
+        - range: [46, 60]
+          risk_class: "standard"
+        - range: [61, 70]
+          risk_class: "substandard"
+        - range: [71, 85]
+          risk_class: "high_risk"
+          
+    - field_id: "applicant_gender"
+      display_name: "Gender"
+      field_type: "select"
+      priority: 2
+      
+      options:
+        - id: "male"
+          display: "Male"
+          actuarial_factor: 1.0
+        - id: "female"
+          display: "Female"
+          actuarial_factor: 0.85
+        - id: "non-binary"
+          display: "Non-Binary"
+          actuarial_factor: "average"
+        - id: "prefer_not_to_say"
+          display: "Prefer Not to Say"
+          actuarial_factor: "average"
+          
+    - field_id: "coverage_amount"
+      display_name: "Desired Coverage Amount"
+      field_type: "currency"
+      priority: 1
+      
+      common_amounts:
+        - 100000
+        - 250000
+        - 500000
+        - 750000
+        - 1000000
+        - 2000000
+        - 5000000
+        
+      calculation_methods:
+        income_replacement:
+          multiplier: 10
+          description: "10x annual income"
+        dime_method:
+          components: ["debt", "income_replacement", "mortgage", "education"]
+        human_life_value:
+          factors: ["age", "income", "years_to_retirement"]
+          
+      extraction_patterns:
+        - "(?:looking for|want|need)\\s+(?:about\\s+)?\\$?([\\d,]+(?:k|m)?)"
+        - "coverage\\s+(?:of|for|around)\\s+\\$?([\\d,]+(?:k|m)?)"
+        
+    - field_id: "coverage_type"
+      display_name: "Coverage Type"
+      field_type: "select"
+      priority: 2
+      
+      options:
+        - id: "term"
+          display: "Term Life"
+          description: "Coverage for a specific period (10, 20, 30 years)"
+          sub_types:
+            - term_10
+            - term_15
+            - term_20
+            - term_25
+            - term_30
+          characteristics:
+            - "Lower premiums"
+            - "No cash value"
+            - "Coverage ends at term expiration"
+          best_for: ["income_replacement", "mortgage_protection", "young_families"]
+          
+        - id: "whole"
+          display: "Whole Life"
+          description: "Permanent coverage with cash value"
+          characteristics:
+            - "Fixed premiums"
+            - "Builds cash value"
+            - "Lifetime coverage"
+            - "Dividend potential"
+          best_for: ["estate_planning", "wealth_transfer", "permanent_needs"]
+          
+        - id: "universal"
+          display: "Universal Life"
+          description: "Flexible permanent coverage"
+          characteristics:
+            - "Flexible premiums"
+            - "Adjustable death benefit"
+            - "Cash value grows at declared rate"
+          best_for: ["flexibility_needs", "retirement_supplement"]
+          
+        - id: "variable"
+          display: "Variable Life"
+          description: "Investment-linked coverage"
+          characteristics:
+            - "Cash value in investment accounts"
+            - "Market risk"
+            - "Potential for higher returns"
+          best_for: ["investment_oriented", "higher_risk_tolerance"]
+          
+        - id: "final_expense"
+          display: "Final Expense"
+          description: "Small whole life for burial costs"
+          typical_amounts: [5000, 10000, 15000, 25000]
+          simplified_underwriting: true
+          best_for: ["seniors", "funeral_costs"]
+          
+  optional_fields:
+    - field_id: "tobacco_use"
+      display_name: "Tobacco Use"
+      field_type: "select"
+      priority: 2
+      sensitivity: "high"
+      source: "field_extractors.py lines 2008-2079"
+      premium_impact: "very_high"
+      
+      options:
+        - id: "never"
+          display: "Never Used"
+          indicators: ["never smoked", "non-smoker", "non smoker", "nonsmoker", "don't smoke", "dont smoke", "never used tobacco", "tobacco free", "never touched"]
+          rate_class: "non_tobacco"
+          premium_multiplier: 1.0
+          
+        - id: "former"
+          display: "Former User (Quit 12+ months ago)"
+          indicators: ["quit", "former smoker", "used to smoke", "stopped smoking", "quit smoking", "gave up", "haven't smoked in"]
+          rate_class: "non_tobacco_if_12_months"
+          lookback_period_months: 12
+          premium_multiplier: 1.0
+          follow_up_question: "When did you quit?"
+          
+        - id: "occasional"
+          display: "Occasional/Social"
+          indicators: ["occasional", "social smoker", "sometimes", "rarely", "once in a while", "socially"]
+          rate_class: "tobacco"
+          premium_multiplier: 2.0
+          note: "Any tobacco use in last 12 months = tobacco rates"
+          
+        - id: "regular"
+          display: "Regular User"
+          indicators: ["smoker", "smoke", "daily", "pack a day", "cigarettes", "tobacco user", "yes I smoke"]
+          rate_class: "tobacco"
+          premium_multiplier: 2.0
+          
+        - id: "vape_only"
+          display: "Vape/E-Cigarette Only"
+          indicators: ["vape", "e-cigarette", "juul", "vaping", "e-cig"]
+          rate_class: "varies_by_carrier"
+          note: "Some carriers treat as non-tobacco, others as tobacco"
+          
+        - id: "cigars_occasional"
+          display: "Cigars (Occasional)"
+          indicators: ["cigar", "occasional cigar", "cigar smoker"]
+          rate_class: "varies_by_carrier"
+          frequency_threshold: "12_per_year"
+          
+        - id: "chewing_tobacco"
+          display: "Chewing Tobacco/Snuff"
+          indicators: ["chew", "chewing tobacco", "dip", "snuff", "smokeless"]
+          rate_class: "tobacco"
+          premium_multiplier: 1.5
+          
+    - field_id: "health_conditions"
+      display_name: "Health Conditions"
+      field_type: "multiselect"
+      priority: 3
+      sensitivity: "very_high"
+      
+      options:
+        - id: "none"
+          display: "None"
+          underwriting_impact: "none"
+          
+        - id: "diabetes"
+          display: "Diabetes"
+          sub_types: ["type_1", "type_2", "gestational", "pre_diabetic"]
+          underwriting_impact: "moderate_to_high"
+          follow_up_questions:
+            - "Type 1 or Type 2?"
+            - "When were you diagnosed?"
+            - "Is it controlled with medication?"
+            - "What is your latest A1C?"
+            
+        - id: "heart_disease"
+          display: "Heart Disease"
+          sub_types: ["coronary_artery", "heart_attack", "arrhythmia", "heart_failure", "valve_disease"]
+          underwriting_impact: "high"
+          follow_up_questions:
+            - "What type of heart condition?"
+            - "When were you diagnosed?"
+            - "Have you had any procedures?"
+            
+        - id: "cancer_history"
+          display: "Cancer History"
+          underwriting_impact: "high_to_decline"
+          follow_up_questions:
+            - "What type of cancer?"
+            - "When were you diagnosed?"
+            - "What treatment did you receive?"
+            - "Are you currently in remission?"
+            - "How long have you been in remission?"
+          remission_periods:
+            preferred: "10+ years"
+            standard: "5-10 years"
+            substandard: "2-5 years"
+            decline: "under 2 years"
+            
+        - id: "high_blood_pressure"
+          display: "High Blood Pressure"
+          underwriting_impact: "low_to_moderate"
+          controlled_impact: "minimal"
+          uncontrolled_impact: "moderate"
+          
+        - id: "high_cholesterol"
+          display: "High Cholesterol"
+          underwriting_impact: "low"
+          controlled_impact: "minimal"
+          
+        - id: "asthma"
+          display: "Asthma"
+          underwriting_impact: "low_to_moderate"
+          severity_factors: ["hospitalizations", "medication", "frequency"]
+          
+        - id: "depression_anxiety"
+          display: "Depression/Anxiety"
+          underwriting_impact: "low_to_moderate"
+          factors: ["hospitalization", "medication", "stability"]
+          
+        - id: "sleep_apnea"
+          display: "Sleep Apnea"
+          underwriting_impact: "low_to_moderate"
+          treated_impact: "minimal"
+          
+        - id: "other"
+          display: "Other Condition"
+          underwriting_impact: "varies"
+          requires_description: true
+          
+    - field_id: "height"
+      display_name: "Height"
+      field_type: "text"
+      priority: 3
+      sensitivity: "medium"
+      
+      extraction_patterns:
+        feet_inches:
+          pattern: "(\\d)'\\s*(\\d{1,2})\"?"
+          example: "5'10\""
+        feet_only:
+          pattern: "(\\d)\\s*(?:feet|foot|ft)"
+          example: "6 feet"
+        cm:
+          pattern: "(\\d{2,3})\\s*cm"
+          example: "175 cm"
+          
+    - field_id: "weight"
+      display_name: "Weight"
+      field_type: "number"
+      priority: 3
+      sensitivity: "medium"
+      
+      extraction_patterns:
+        pounds:
+          pattern: "(\\d{2,3})\\s*(?:lbs?|pounds?)"
+          example: "180 lbs"
+        kg:
+          pattern: "(\\d{2,3})\\s*(?:kg|kilos?|kilograms?)"
+          example: "82 kg"
+          conversion: 2.205
+          
+      build_chart_reference: true
+      
+    - field_id: "occupation"
+      display_name: "Occupation"
+      field_type: "text"
+      priority: 3
+      
+      high_risk_occupations:
+        aviation:
+          - "pilot"
+          - "flight crew"
+          - "helicopter pilot"
+        mining:
+          - "miner"
+          - "underground worker"
+        emergency_services:
+          - "firefighter"
+          - "police officer"
+          - "emt"
+          - "paramedic"
+        military:
+          - "military"
+          - "armed forces"
+          - "combat"
+        construction:
+          - "construction worker"
+          - "roofer"
+          - "ironworker"
+          - "lineman"
+        offshore:
+          - "offshore worker"
+          - "oil rig"
+          - "commercial diver"
+          
+      premium_loading:
+        standard: 0
+        moderate_risk: "25-50%"
+        high_risk: "50-100%"
+        may_decline: "extreme risk"
+        
+    - field_id: "annual_income"
+      display_name: "Annual Income"
+      field_type: "currency"
+      priority: 3
+      sensitivity: "high"
+      
+      purpose: "Coverage justification"
+      typical_multiplier: "10-15x income"
+      
+    - field_id: "beneficiary_relationship"
+      display_name: "Primary Beneficiary Relationship"
+      field_type: "select"
+      priority: 4
+      
+      options:
+        - id: "spouse"
+          display: "Spouse"
+          insurable_interest: "automatic"
+        - id: "child"
+          display: "Child"
+          insurable_interest: "automatic"
+        - id: "parent"
+          display: "Parent"
+          insurable_interest: "automatic"
+        - id: "sibling"
+          display: "Sibling"
+          insurable_interest: "automatic"
+        - id: "trust"
+          display: "Trust"
+          requires_trust_documentation: true
+        - id: "estate"
+          display: "Estate"
+          tax_implications: true
+        - id: "business_partner"
+          display: "Business Partner"
+          insurable_interest: "requires_documentation"
+        - id: "charity"
+          display: "Charity"
+          insurable_interest: "automatic"
+        - id: "other"
+          display: "Other"
+          insurable_interest: "requires_documentation"
+          
+    - field_id: "existing_coverage"
+      display_name: "Existing Life Insurance"
+      field_type: "currency"
+      priority: 4
+      
+      purpose: "Total coverage assessment"
+      replacement_considerations: true
+      
+    - field_id: "dangerous_hobbies"
+      display_name: "Dangerous Hobbies/Activities"
+      field_type: "multiselect"
+      priority: 4
+      
+      options:
+        - id: "none"
+          display: "None"
+        - id: "skydiving"
+          display: "Skydiving"
+          premium_impact: "high"
+        - id: "scuba_diving"
+          display: "Scuba Diving"
+          premium_impact: "moderate"
+          depth_factor: true
+        - id: "rock_climbing"
+          display: "Rock Climbing"
+          premium_impact: "moderate"
+        - id: "motorcycle_racing"
+          display: "Motorcycle Racing"
+          premium_impact: "high"
+        - id: "private_aviation"
+          display: "Private Aviation"
+          premium_impact: "high"
+        - id: "hang_gliding"
+          display: "Hang Gliding"
+          premium_impact: "high"
+        - id: "bungee_jumping"
+          display: "Bungee Jumping"
+          premium_impact: "moderate"
+
+  cross_sell_triggers:
+    - trigger_field: "has_dependents"
+      trigger_value: true
+      target_product: "disability_insurance"
+      relevance_score: 75
+      seed_message: "Since you have dependents, disability insurance can protect your income if you can't work."
+      
+    - trigger_field: "coverage_amount"
+      condition: "greater_than"
+      trigger_value: 1000000
+      target_product: "umbrella_insurance"
+      relevance_score: 60
+
+# =============================================================================
+# COMMERCIAL INSURANCE FIELDS
+# =============================================================================
+
+commercial_insurance:
+  product_id: "commercial_insurance"
+  display_name: "Commercial Insurance"
+  category: "commercial_lines"
+  
+  required_fields:
+    - field_id: "business_name"
+      display_name: "Business Name"
+      field_type: "text"
+      priority: 1
+      
+    - field_id: "business_type"
+      display_name: "Business Entity Type"
+      field_type: "select"
+      priority: 1
+      
+      options:
+        - id: "sole_proprietorship"
+          display: "Sole Proprietorship"
+          liability_structure: "personal"
+          
+        - id: "partnership"
+          display: "Partnership"
+          sub_types: ["general", "limited", "llp"]
+          liability_structure: "shared"
+          
+        - id: "llc"
+          display: "LLC"
+          liability_structure: "limited"
+          
+        - id: "corporation"
+          display: "Corporation"
+          sub_types: ["s_corp", "c_corp"]
+          liability_structure: "limited"
+          
+        - id: "nonprofit"
+          display: "Nonprofit"
+          liability_structure: "limited"
+          special_coverage: ["d&o", "volunteer_liability"]
+          
+    - field_id: "industry"
+      display_name: "Industry/Business Type"
+      field_type: "select"
+      priority: 1
+      
+      options:
+        - id: "retail"
+          display: "Retail"
+          typical_coverage: ["general_liability", "property", "crime"]
+          
+        - id: "restaurant"
+          display: "Restaurant/Food Service"
+          typical_coverage: ["general_liability", "property", "liquor_liability", "food_contamination"]
+          
+        - id: "professional_services"
+          display: "Professional Services"
+          typical_coverage: ["professional_liability", "general_liability", "cyber"]
+          
+        - id: "construction"
+          display: "Construction"
+          typical_coverage: ["general_liability", "workers_comp", "builders_risk", "equipment"]
+          high_risk: true
+          
+        - id: "manufacturing"
+          display: "Manufacturing"
+          typical_coverage: ["general_liability", "product_liability", "property", "workers_comp"]
+          
+        - id: "healthcare"
+          display: "Healthcare"
+          typical_coverage: ["professional_liability", "general_liability", "cyber"]
+          regulated: true
+          
+        - id: "technology"
+          display: "Technology"
+          typical_coverage: ["professional_liability", "cyber", "general_liability"]
+          
+        - id: "real_estate"
+          display: "Real Estate"
+          typical_coverage: ["general_liability", "e&o", "property"]
+          
+        - id: "transportation"
+          display: "Transportation/Trucking"
+          typical_coverage: ["commercial_auto", "cargo", "general_liability"]
+          
+        - id: "other"
+          display: "Other"
+          requires_description: true
+          
+    - field_id: "years_in_business"
+      display_name: "Years in Business"
+      field_type: "number"
+      priority: 2
+      valid_range: [0, 200]
+      
+      underwriting_tiers:
+        new_business: [0, 2]
+        established: [3, 10]
+        mature: [11, 50]
+        legacy: [51, 200]
+        
+    - field_id: "number_of_employees"
+      display_name: "Number of Employees"
+      field_type: "number"
+      priority: 2
+      
+      size_classifications:
+        micro: [1, 10]
+        small: [11, 50]
+        medium: [51, 250]
+        large: [251, 1000]
+        enterprise: [1001, null]
+        
+      workers_comp_trigger: 1
+      
+    - field_id: "annual_revenue"
+      display_name: "Annual Revenue"
+      field_type: "currency"
+      priority: 2
+      
+      size_classifications:
+        startup: [0, 100000]
+        small: [100001, 1000000]
+        medium: [1000001, 10000000]
+        large: [10000001, 100000000]
+        enterprise: [100000001, null]
+        
+  optional_fields:
+    - field_id: "coverage_types_needed"
+      display_name: "Coverage Types Needed"
+      field_type: "multiselect"
+      priority: 3
+      
+      options:
+        - id: "general_liability"
+          display: "General Liability"
+          description: "Third-party bodily injury and property damage"
+          typical_limits: [1000000, 2000000]
+          
+        - id: "professional_liability"
+          display: "Professional Liability (E&O)"
+          description: "Errors and omissions coverage"
+          typical_limits: [1000000, 2000000]
+          
+        - id: "workers_comp"
+          display: "Workers' Compensation"
+          description: "Employee injury coverage"
+          required_in_most_states: true
+          
+        - id: "property"
+          display: "Commercial Property"
+          description: "Building and contents coverage"
+          
+        - id: "business_auto"
+          display: "Commercial Auto"
+          description: "Business vehicle coverage"
+          
+        - id: "cyber_liability"
+          display: "Cyber Liability"
+          description: "Data breach and cyber attack coverage"
+          typical_limits: [1000000, 5000000]
+          
+        - id: "directors_officers"
+          display: "Directors & Officers (D&O)"
+          description: "Management liability coverage"
+          
+        - id: "employment_practices"
+          display: "Employment Practices (EPLI)"
+          description: "Wrongful termination, discrimination claims"
+          
+        - id: "umbrella"
+          display: "Commercial Umbrella"
+          description: "Excess liability coverage"
+          
+        - id: "business_interruption"
+          display: "Business Interruption"
+          description: "Lost income during closures"
+          
+        - id: "product_liability"
+          display: "Product Liability"
+          description: "Product-related injury claims"
+          
+        - id: "equipment_breakdown"
+          display: "Equipment Breakdown"
+          description: "Mechanical/electrical breakdown"
+          
+    - field_id: "business_location"
+      display_name: "Business Location"
+      field_type: "address"
+      priority: 3
+      
+    - field_id: "owns_or_leases"
+      display_name: "Own or Lease Premises"
+      field_type: "select"
+      priority: 4
+      
+      options:
+        - id: "own"
+          display: "Own"
+          coverage_type: "building_and_contents"
+        - id: "lease"
+          display: "Lease"
+          coverage_type: "contents_and_improvements"
+        - id: "home_based"
+          display: "Home-Based"
+          coverage_type: "in_home_business"
+
+  cross_sell_triggers:
+    - trigger_field: "coverage_types_needed"
+      condition: "contains"
+      trigger_value: "general_liability"
+      target_product: "cyber_insurance"
+      relevance_score: 80
+      seed_message: "Most businesses today also need cyber liability coverage - it protects against data breaches."
+      
+    - trigger_field: "number_of_employees"
+      condition: "greater_than"
+      trigger_value: 10
+      target_product: "employment_practices_insurance"
+      relevance_score: 65
+      seed_message: "With your employee count, EPLI coverage protects against wrongful termination and discrimination claims."
+
+# =============================================================================
+# UMBRELLA INSURANCE FIELDS
+# =============================================================================
+
+umbrella_insurance:
+  product_id: "umbrella_insurance"
+  display_name: "Umbrella Insurance"
+  category: "personal_lines"
+  
+  prerequisites:
+    required_underlying:
+      - product: "auto_insurance"
+        minimum_liability: 250000
+      - product: "home_insurance"
+        minimum_liability: 300000
+        
+  required_fields:
+    - field_id: "current_auto_liability"
+      display_name: "Current Auto Liability Limits"
+      field_type: "currency"
+      priority: 1
+      minimum_for_umbrella: 250000
+      
+      common_limits:
+        - 100000  # Too low for umbrella
+        - 250000  # Minimum
+        - 300000
+        - 500000  # Preferred
+        
+    - field_id: "current_home_liability"
+      display_name: "Current Home Liability Limits"
+      field_type: "currency"
+      priority: 1
+      minimum_for_umbrella: 300000
+      
+      common_limits:
+        - 100000  # Too low for umbrella
+        - 300000  # Minimum
+        - 500000  # Preferred
+        
+    - field_id: "desired_umbrella_coverage"
+      display_name: "Desired Umbrella Coverage"
+      field_type: "currency"
+      priority: 1
+      
+      common_amounts:
+        - 1000000
+        - 2000000
+        - 3000000
+        - 5000000
+        - 10000000
+        
+      recommendation_factors:
+        - "total_assets"
+        - "income_level"
+        - "risk_exposure"
+        - "profession"
+        
+    - field_id: "total_assets"
+      display_name: "Approximate Total Assets"
+      field_type: "currency"
+      priority: 2
+      sensitivity: "high"
+      
+      components:
+        - "home_equity"
+        - "investment_accounts"
+        - "retirement_accounts"
+        - "other_real_estate"
+        - "business_interests"
+        
+      coverage_recommendation: "assets + 5_years_income"
+      
+  optional_fields:
+    - field_id: "number_of_vehicles"
+      display_name: "Number of Vehicles"
+      field_type: "number"
+      priority: 3
+      risk_factor: true
+      
+    - field_id: "number_of_drivers"
+      display_name: "Number of Drivers in Household"
+      field_type: "number"
+      priority: 3
+      risk_factor: true
+      young_driver_loading: true
+      
+    - field_id: "watercraft"
+      display_name: "Own Watercraft"
+      field_type: "boolean"
+      priority: 3
+      
+      if_yes:
+        additional_questions:
+          - watercraft_type
+          - watercraft_length
+          - watercraft_horsepower
+        liability_exposure: "elevated"
+        
+    - field_id: "rental_properties"
+      display_name: "Number of Rental Properties"
+      field_type: "number"
+      priority: 3
+      liability_exposure: "elevated"
+      landlord_coverage_required: true
+      
+    - field_id: "high_risk_activities"
+      display_name: "High-Risk Activities/Hobbies"
+      field_type: "multiselect"
+      priority: 4
+      
+      options:
+        - id: "none"
+          display: "None"
+        - id: "atv"
+          display: "ATV/Off-Road Vehicles"
+        - id: "motorcycle"
+          display: "Motorcycle"
+        - id: "boating"
+          display: "Boating"
+        - id: "skiing"
+          display: "Skiing/Snowboarding"
+        - id: "skydiving"
+          display: "Skydiving"
+        - id: "hunting"
+          display: "Hunting"
+        - id: "home_business"
+          display: "Home-Based Business"
+        - id: "volunteer_work"
+          display: "Board/Volunteer Positions"
+        - id: "coaching"
+          display: "Youth Coaching"
+        - id: "other"
+          display: "Other"
+          
+    - field_id: "profession"
+      display_name: "Profession"
+      field_type: "text"
+      priority: 4
+      
+      high_exposure_professions:
+        - "physician"
+        - "surgeon"
+        - "attorney"
+        - "executive"
+        - "business_owner"
+        - "real_estate_developer"
+        - "public_figure"
+
+# =============================================================================
+# REAL ESTATE INDUSTRY FIELDS
+# =============================================================================
+
+real_estate_fields:
+
+  # ---------------------------------------------------------------------------
+  # BUYER QUALIFICATION
+  # ---------------------------------------------------------------------------
+  buyer_qualification:
+    product_id: "buyer_qualification"
+    display_name: "Buyer Qualification"
+    category: "real_estate"
+    
+    required_fields:
+      - field_id: "transaction_type"
+        display_name: "Transaction Type"
+        field_type: "select"
+        priority: 1
+        
+        options:
+          - id: "purchase"
+            display: "Primary Residence Purchase"
+            typical_financing: "conventional"
+            
+          - id: "investment"
+            display: "Investment Property"
+            typical_financing: "investment_loan"
+            down_payment_typical: "20-25%"
+            
+          - id: "relocation"
+            display: "Relocation"
+            cross_sell_opportunity: "relocation_services"
+            
+          - id: "first_time"
+            display: "First-Time Buyer"
+            special_programs: ["fha", "first_time_buyer_credits", "down_payment_assistance"]
+            
+          - id: "vacation"
+            display: "Vacation/Second Home"
+            typical_financing: "second_home_loan"
+            
+      - field_id: "property_type_desired"
+        display_name: "Property Type"
+        field_type: "select"
+        priority: 1
+        
+        options:
+          - id: "single_family"
+            display: "Single Family Home"
+          - id: "condo"
+            display: "Condominium"
+          - id: "townhouse"
+            display: "Townhouse"
+          - id: "multi_family"
+            display: "Multi-Family (2-4 units)"
+          - id: "land"
+            display: "Land/Lot"
+          - id: "new_construction"
+            display: "New Construction"
+            
+      - field_id: "preferred_areas"
+        display_name: "Preferred Areas/Neighborhoods"
+        field_type: "text"
+        priority: 1
+        allows_multiple: true
+        
+      - field_id: "price_range_min"
+        display_name: "Minimum Price"
+        field_type: "currency"
+        priority: 1
+        
+      - field_id: "price_range_max"
+        display_name: "Maximum Price"
+        field_type: "currency"
+        priority: 1
+        
+      - field_id: "pre_approved"
+        display_name: "Pre-Approved for Mortgage"
+        field_type: "boolean"
+        priority: 2
+        
+        cross_sell_trigger:
+          when: false
+          target_partner: "mortgage_services"
+          priority: 1
+          relevance_score: 90
+          seed_message: "Getting pre-approved is an important first step. Would you like me to connect you with our mortgage partner?"
+          
+      - field_id: "timeline_to_buy"
+        display_name: "Timeline to Purchase"
+        field_type: "select"
+        priority: 2
+        
+        options:
+          - id: "immediate"
+            display: "Immediately (0-30 days)"
+            urgency: "high"
+          - id: "1_3_months"
+            display: "1-3 Months"
+            urgency: "medium"
+          - id: "3_6_months"
+            display: "3-6 Months"
+            urgency: "low"
+          - id: "6_12_months"
+            display: "6-12 Months"
+            urgency: "very_low"
+          - id: "just_browsing"
+            display: "Just Browsing"
+            urgency: "none"
+            
+    optional_fields:
+      - field_id: "bedrooms_min"
+        display_name: "Minimum Bedrooms"
+        field_type: "number"
+        priority: 3
+        valid_range: [0, 20]
+        common_values: [2, 3, 4]
+        
+      - field_id: "bathrooms_min"
+        display_name: "Minimum Bathrooms"
+        field_type: "number"
+        priority: 3
+        valid_range: [1, 10]
+        allows_half: true
+        common_values: [1, 1.5, 2, 2.5, 3]
+        
+      - field_id: "square_feet_min"
+        display_name: "Minimum Square Feet"
+        field_type: "number"
+        priority: 4
+        valid_range: [500, 20000]
+        
+      - field_id: "lot_size_preference"
+        display_name: "Lot Size Preference"
+        field_type: "select"
+        priority: 4
+        
+        options:
+          - id: "small"
+            display: "Small (under 0.25 acre)"
+          - id: "medium"
+            display: "Medium (0.25-0.5 acre)"
+          - id: "large"
+            display: "Large (0.5-1 acre)"
+          - id: "acreage"
+            display: "Acreage (1+ acre)"
+          - id: "no_preference"
+            display: "No Preference"
+            
+      - field_id: "must_haves"
+        display_name: "Must-Have Features"
+        field_type: "multiselect"
+        priority: 3
+        
+        options:
+          - id: "garage"
+            display: "Garage"
+          - id: "pool"
+            display: "Pool"
+          - id: "basement"
+            display: "Basement"
+          - id: "yard"
+            display: "Yard"
+          - id: "updated_kitchen"
+            display: "Updated Kitchen"
+          - id: "home_office"
+            display: "Home Office"
+          - id: "single_story"
+            display: "Single Story"
+          - id: "master_main"
+            display: "Master on Main"
+          - id: "open_floor_plan"
+            display: "Open Floor Plan"
+          - id: "hardwood_floors"
+            display: "Hardwood Floors"
+          - id: "fireplace"
+            display: "Fireplace"
+          - id: "outdoor_space"
+            display: "Outdoor Living Space"
+          - id: "smart_home"
+            display: "Smart Home Features"
+          - id: "energy_efficient"
+            display: "Energy Efficient"
+            
+      - field_id: "deal_breakers"
+        display_name: "Deal Breakers"
+        field_type: "multiselect"
+        priority: 4
+        
+        options:
+          - id: "hoa"
+            display: "HOA"
+          - id: "busy_road"
+            display: "Busy Road"
+          - id: "major_renovation"
+            display: "Needs Major Renovation"
+          - id: "small_lot"
+            display: "Small Lot"
+          - id: "no_garage"
+            display: "No Garage"
+          - id: "stairs"
+            display: "Too Many Stairs"
+            
+      - field_id: "current_living_situation"
+        display_name: "Current Living Situation"
+        field_type: "select"
+        priority: 4
+        
+        options:
+          - id: "own_selling"
+            display: "Own Home (Will Sell)"
+            cross_sell_trigger: "seller_qualification"
+          - id: "own_keeping"
+            display: "Own Home (Will Keep)"
+          - id: "rent"
+            display: "Currently Renting"
+          - id: "living_with_family"
+            display: "Living with Family"
+            
+      - field_id: "down_payment_available"
+        display_name: "Down Payment Available"
+        field_type: "currency"
+        priority: 3
+        sensitivity: "medium"
+        
+    cross_sell_triggers:
+      - trigger_field: "pre_approved"
+        trigger_value: false
+        target_partner: "mortgage_services"
+        priority: 1
+        relevance_score: 90
+        
+      - trigger_signal: "offer_accepted"
+        target_partner: "home_insurance"
+        priority: 2
+        relevance_score: 95
+        seed_message: "Congratulations on your accepted offer! You'll need home insurance before closing - would you like a quote?"
+        
+      - trigger_signal: "under_contract"
+        target_partner: "home_inspection"
+        priority: 2
+        relevance_score: 90
+
+  # ---------------------------------------------------------------------------
+  # SELLER QUALIFICATION
+  # ---------------------------------------------------------------------------
+  seller_qualification:
+    product_id: "seller_qualification"
+    display_name: "Seller Qualification"
+    category: "real_estate"
+    
+    required_fields:
+      - field_id: "property_address"
+        display_name: "Property Address"
+        field_type: "address"
+        priority: 1
+        
+      - field_id: "reason_for_selling"
+        display_name: "Reason for Selling"
+        field_type: "select"
+        priority: 1
+        
+        options:
+          - id: "relocating"
+            display: "Relocating"
+            cross_sell_opportunity: "buyer_qualification"
+            urgency_typical: "moderate"
+            
+          - id: "downsizing"
+            display: "Downsizing"
+            cross_sell_opportunity: "buyer_qualification"
+            
+          - id: "upsizing"
+            display: "Upsizing/Growing Family"
+            cross_sell_opportunity: "buyer_qualification"
+            
+          - id: "investment"
+            display: "Investment Property Sale"
+            may_be_tenant_occupied: true
+            
+          - id: "divorce"
+            display: "Divorce/Separation"
+            sensitivity: "high"
+            may_require_court_approval: true
+            
+          - id: "estate"
+            display: "Estate Sale"
+            sensitivity: "high"
+            may_require_probate: true
+            
+          - id: "financial"
+            display: "Financial Reasons"
+            sensitivity: "high"
+            may_consider_short_sale: true
+            
+          - id: "retirement"
+            display: "Retirement"
+            cross_sell_opportunity: "financial_planning"
+            
+          - id: "other"
+            display: "Other"
+            requires_description: true
+            
+      - field_id: "timeline_to_sell"
+        display_name: "Timeline to Sell"
+        field_type: "select"
+        priority: 1
+        
+        options:
+          - id: "asap"
+            display: "As Soon As Possible"
+            urgency: "critical"
+            pricing_strategy: "aggressive"
+            
+          - id: "1_3_months"
+            display: "1-3 Months"
+            urgency: "high"
+            pricing_strategy: "market"
+            
+          - id: "3_6_months"
+            display: "3-6 Months"
+            urgency: "moderate"
+            pricing_strategy: "market_plus"
+            
+          - id: "6_12_months"
+            display: "6-12 Months"
+            urgency: "low"
+            pricing_strategy: "aspirational"
+            
+          - id: "flexible"
+            display: "Flexible"
+            urgency: "none"
+            pricing_strategy: "test_market"
+            
+      - field_id: "property_condition"
+        display_name: "Property Condition"
+        field_type: "select"
+        priority: 2
+        
+        options:
+          - id: "move_in_ready"
+            display: "Move-In Ready"
+            description: "Excellent condition, no work needed"
+            
+          - id: "needs_minor_work"
+            display: "Needs Minor Updates"
+            description: "Paint, fixtures, minor cosmetic updates"
+            cross_sell_trigger: "contractor_services"
+            
+          - id: "needs_major_work"
+            display: "Needs Major Renovation"
+            description: "Kitchen, bathrooms, significant repairs"
+            cross_sell_trigger: "contractor_services"
+            may_affect_financing: true
+            
+          - id: "as_is"
+            display: "Selling As-Is"
+            description: "No repairs or updates will be made"
+            typical_buyer: "investor"
+            
+      - field_id: "price_expectations"
+        display_name: "Price Expectations"
+        field_type: "currency"
+        priority: 2
+        
+    optional_fields:
+      - field_id: "mortgage_balance"
+        display_name: "Approximate Mortgage Balance"
+        field_type: "currency"
+        priority: 3
+        sensitivity: "high"
+        purpose: "Equity calculation"
+        
+      - field_id: "currently_listed"
+        display_name: "Currently Listed with Agent"
+        field_type: "boolean"
+        priority: 2
+        
+        if_yes:
+          follow_up_questions:
+            - "When does your listing agreement expire?"
+            - "Are you satisfied with your current agent?"
+            
+      - field_id: "previous_listing"
+        display_name: "Previously Listed"
+        field_type: "boolean"
+        priority: 3
+        
+        if_yes:
+          follow_up_questions:
+            - "How long was it on the market?"
+            - "Why didn't it sell?"
+            
+      - field_id: "buying_next"
+        display_name: "Planning to Buy Next"
+        field_type: "boolean"
+        priority: 3
+        cross_sell_trigger: "buyer_qualification"
+        
+      - field_id: "contingent_on_sale"
+        display_name: "Purchase Contingent on Sale"
+        field_type: "boolean"
+        priority: 3
+        timing_implications: true
+        
+      - field_id: "tenant_occupied"
+        display_name: "Tenant Occupied"
+        field_type: "boolean"
+        priority: 3
+        
+        if_yes:
+          follow_up_questions:
+            - "Month-to-month or lease?"
+            - "When does lease expire?"
+          showing_restrictions: true
+          
+    cross_sell_triggers:
+      - trigger_field: "buying_next"
+        trigger_value: true
+        target_product: "buyer_qualification"
+        relevance_score: 95
+        
+      - trigger_field: "reason_for_selling"
+        trigger_value: "relocating"
+        target_partner: "relocation_services"
+        relevance_score: 80
+
+  # ---------------------------------------------------------------------------
+  # RENTAL QUALIFICATION
+  # ---------------------------------------------------------------------------
+  rental_qualification:
+    product_id: "rental_qualification"
+    display_name: "Rental Qualification"
+    category: "real_estate"
+    
+    required_fields:
+      - field_id: "rental_type"
+        display_name: "Looking For"
+        field_type: "select"
+        priority: 1
+        
+        options:
+          - id: "apartment"
+            display: "Apartment"
+          - id: "house"
+            display: "House"
+          - id: "condo"
+            display: "Condo"
+          - id: "townhouse"
+            display: "Townhouse"
+          - id: "room"
+            display: "Room"
+          - id: "studio"
+            display: "Studio"
+            
+      - field_id: "preferred_location"
+        display_name: "Preferred Location"
+        field_type: "text"
+        priority: 1
+        allows_multiple: true
+        
+      - field_id: "budget_monthly"
+        display_name: "Monthly Budget"
+        field_type: "currency"
+        priority: 1
+        
+        affordability_rule: "30% of gross income"
+        
+      - field_id: "move_in_date"
+        display_name: "Desired Move-In Date"
+        field_type: "date"
+        priority: 1
+        
+      - field_id: "lease_length"
+        display_name: "Preferred Lease Length"
+        field_type: "select"
+        priority: 2
+        
+        options:
+          - id: "month_to_month"
+            display: "Month-to-Month"
+            typical_premium: "10-15%"
+          - id: "6_months"
+            display: "6 Months"
+          - id: "1_year"
+            display: "1 Year"
+            most_common: true
+          - id: "2_years"
+            display: "2 Years"
+            may_offer_discount: true
+          - id: "flexible"
+            display: "Flexible"
+            
+    optional_fields:
+      - field_id: "bedrooms_needed"
+        display_name: "Bedrooms Needed"
+        field_type: "number"
+        priority: 3
+        valid_range: [0, 10]
+        
+      - field_id: "bathrooms_needed"
+        display_name: "Bathrooms Needed"
+        field_type: "number"
+        priority: 3
+        valid_range: [1, 5]
+        
+      - field_id: "pets"
+        display_name: "Pets"
+        field_type: "multiselect"
+        priority: 3
+        
+        options:
+          - id: "none"
+            display: "No Pets"
+          - id: "dog_small"
+            display: "Small Dog (under 25 lbs)"
+          - id: "dog_large"
+            display: "Large Dog (over 25 lbs)"
+          - id: "cat"
+            display: "Cat"
+          - id: "multiple_pets"
+            display: "Multiple Pets"
+          - id: "other"
+            display: "Other (birds, fish, etc.)"
+            
+        pet_deposit_typical: "one month rent"
+        pet_rent_typical: "$25-50/month"
+        
+      - field_id: "occupants"
+        display_name: "Number of Occupants"
+        field_type: "number"
+        priority: 3
+        valid_range: [1, 20]
+        
+      - field_id: "parking_needed"
+        display_name: "Parking Needed"
+        field_type: "select"
+        priority: 4
+        
+        options:
+          - id: "none"
+            display: "No Parking Needed"
+          - id: "1_spot"
+            display: "1 Parking Spot"
+          - id: "2_spots"
+            display: "2 Parking Spots"
+          - id: "garage"
+            display: "Garage Preferred"
+            
+      - field_id: "credit_score_range"
+        display_name: "Credit Score Range"
+        field_type: "select"
+        priority: 4
+        sensitivity: "high"
+        
+        options:
+          - id: "excellent"
+            display: "Excellent (750+)"
+          - id: "good"
+            display: "Good (700-749)"
+          - id: "fair"
+            display: "Fair (650-699)"
+          - id: "poor"
+            display: "Poor (below 650)"
+          - id: "unknown"
+            display: "Not Sure"
+            
+      - field_id: "income_monthly"
+        display_name: "Monthly Income"
+        field_type: "currency"
+        priority: 4
+        sensitivity: "high"
+        
+        typical_requirement: "3x monthly rent"
+        
+      - field_id: "amenities_wanted"
+        display_name: "Desired Amenities"
+        field_type: "multiselect"
+        priority: 4
+        
+        options:
+          - id: "laundry_in_unit"
+            display: "In-Unit Laundry"
+          - id: "laundry_on_site"
+            display: "On-Site Laundry"
+          - id: "dishwasher"
+            display: "Dishwasher"
+          - id: "ac"
+            display: "Air Conditioning"
+          - id: "gym"
+            display: "Gym/Fitness Center"
+          - id: "pool"
+            display: "Pool"
+          - id: "balcony"
+            display: "Balcony/Patio"
+          - id: "storage"
+            display: "Storage Unit"
+          - id: "elevator"
+            display: "Elevator"
+          - id: "doorman"
+            display: "Doorman/Concierge"
+
+# =============================================================================
+# END OF PART 2 - CONTINUE TO PART 3 FOR:
+# - AI Mode Configuration (detailed)
+# - Channel Configuration (detailed)
+# - Persona Configuration (detailed)
+# - Sales Intelligence (aggressiveness, tactics, methodologies)
+# =============================================================================

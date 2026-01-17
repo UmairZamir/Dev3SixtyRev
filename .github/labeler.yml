@@ -1,0 +1,59 @@
+# =============================================================================
+# PR Auto-Labeler Configuration
+# =============================================================================
+# Automatically labels PRs based on files changed.
+
+# SDK Changes
+sdk:
+  - changed-files:
+    - any-glob-to-any-file: 'sdk/**/*'
+
+# Guards
+guards:
+  - changed-files:
+    - any-glob-to-any-file: 'sdk/guards/**/*'
+
+# Registry
+registry:
+  - changed-files:
+    - any-glob-to-any-file: 'sdk/registry/**/*'
+
+# Tests
+tests:
+  - changed-files:
+    - any-glob-to-any-file: 'tests/**/*'
+
+# Documentation
+documentation:
+  - changed-files:
+    - any-glob-to-any-file: 
+      - '**/*.md'
+      - 'docs/**/*'
+
+# Configuration
+configuration:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '*.yaml'
+      - '*.yml'
+      - '*.toml'
+      - '.github/**/*'
+
+# CI/CD
+ci-cd:
+  - changed-files:
+    - any-glob-to-any-file: '.github/workflows/**/*'
+
+# Security
+security:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'sdk/guards/security.py'
+      - '**/security*'
+
+# Dependencies
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'pyproject.toml'
+      - 'requirements*.txt'

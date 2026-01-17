@@ -1,0 +1,212 @@
+# =============================================================================
+# MINIMAL TEST REGISTRY
+# =============================================================================
+# This file provides essential enums and structures for SDK tests
+# Full registry data is in COMPREHENSIVE_REGISTRY_PART{1-5}.yaml (reference only)
+# =============================================================================
+
+core_enums:
+  ai_mode:
+    display_name: "AI Mode"
+    description: "Operating mode for the AI system"
+    source: "platform_config"
+    values:
+      - id: "assistant"
+        display: "Assistant"
+        description: "Traditional assistant mode - responds to queries"
+      - id: "agent"
+        display: "Agent"
+        description: "Autonomous agent mode - takes actions"
+      - id: "service"
+        display: "Service"
+        description: "Background service mode - processes tasks"
+
+  channel:
+    display_name: "Communication Channel"
+    description: "Channel through which communication occurs"
+    source: "platform_config"
+    values:
+      - id: "voice"
+        display: "Voice"
+        description: "Phone/voice communication"
+        constraints:
+          max_message_length: null
+          supports_media: false
+          latency_target_ms: 500
+      - id: "sms"
+        display: "SMS"
+        description: "Text messaging"
+        constraints:
+          max_message_length: 160
+          supports_media: true
+          latency_target_ms: 5000
+      - id: "email"
+        display: "Email"
+        description: "Email communication"
+        constraints:
+          max_message_length: null
+          supports_media: true
+          latency_target_ms: 60000
+      - id: "chat"
+        display: "Chat"
+        description: "Web/app chat interface"
+        constraints:
+          max_message_length: 4000
+          supports_media: true
+          latency_target_ms: 1000
+
+  industry:
+    display_name: "Industry"
+    description: "Target industry vertical"
+    source: "platform_config"
+    values:
+      - id: "insurance"
+        display: "Insurance"
+      - id: "real_estate"
+        display: "Real Estate"
+      - id: "healthcare"
+        display: "Healthcare"
+      - id: "mortgage"
+        display: "Mortgage"
+
+  lead_status:
+    display_name: "Lead Status"
+    description: "Current status of a lead"
+    values:
+      - id: "new"
+        display: "New"
+      - id: "contacted"
+        display: "Contacted"
+      - id: "qualified"
+        display: "Qualified"
+      - id: "converted"
+        display: "Converted"
+      - id: "lost"
+        display: "Lost"
+
+products:
+  auto_insurance:
+    product_id: "auto_insurance"
+    display_name: "Auto Insurance"
+    category: "insurance"
+    description: "Vehicle insurance products"
+    required_fields:
+      - field_id: "driver_age"
+        display_name: "Driver Age"
+        field_type: "number"
+        priority: 1
+        required: true
+        valid_range: [16, 100]
+        extraction_patterns:
+          - pattern: "(\\d+)\\s*years?\\s*old"
+            confidence: 0.9
+          - pattern: "age\\s*(?:is|:)?\\s*(\\d+)"
+            confidence: 0.85
+        question_variations:
+          - "How old are you?"
+          - "What is your age?"
+      - field_id: "vehicle_year"
+        display_name: "Vehicle Year"
+        field_type: "year"
+        priority: 1
+        required: true
+        valid_range: [1900, 2030]
+        extraction_patterns:
+          - pattern: "(19\\d{2}|20\\d{2})\\s*(?:model|year)?"
+            confidence: 0.8
+        context_patterns_positive:
+          - "car"
+          - "vehicle"
+          - "drive"
+        context_patterns_negative:
+          - "house"
+          - "home"
+          - "built"
+    optional_fields:
+      - field_id: "vehicle_make"
+        display_name: "Vehicle Make"
+        field_type: "string"
+        priority: 2
+
+  home_insurance:
+    product_id: "home_insurance"
+    display_name: "Home Insurance"
+    category: "insurance"
+    description: "Property insurance products"
+    required_fields:
+      - field_id: "year_built"
+        display_name: "Year Built"
+        field_type: "year"
+        priority: 1
+        required: true
+        valid_range: [1800, 2030]
+        extraction_patterns:
+          - pattern: "built\\s*(?:in)?\\s*(19\\d{2}|20\\d{2})"
+            confidence: 0.9
+        context_patterns_positive:
+          - "house"
+          - "home"
+          - "property"
+        context_patterns_negative:
+          - "car"
+          - "vehicle"
+
+# AI Mode Configuration (required by validator)
+ai_mode_configuration:
+  assistant:
+    display_name: "Assistant Mode"
+    description: "Traditional assistant mode - responds to queries"
+    authority_matrix:
+      can_book_appointments: false
+      can_process_payments: false
+      can_modify_records: false
+    forbidden_phrases:
+      - "I guarantee"
+      - "I promise"
+  agent:
+    display_name: "Agent Mode"
+    description: "Autonomous agent mode - takes actions"
+    authority_matrix:
+      can_book_appointments: true
+      can_process_payments: true
+      can_modify_records: true
+  service:
+    display_name: "Service Mode"
+    description: "Background service mode - processes tasks"
+    authority_matrix:
+      can_book_appointments: true
+      can_process_payments: true
+      can_modify_records: true
+
+universal_fields:
+  first_name:
+    field_id: "first_name"
+    display_name: "First Name"
+    field_type: "string"
+    priority: 0
+    required: true
+    extraction_patterns:
+      - pattern: "(?:my name is|i'm|i am)\\s+(\\w+)"
+        confidence: 0.8
+      - pattern: "(?:call me)\\s+(\\w+)"
+        confidence: 0.7
+
+  last_name:
+    field_id: "last_name"
+    display_name: "Last Name"
+    field_type: "string"
+    priority: 0
+    required: true
+
+  email:
+    field_id: "email"
+    display_name: "Email Address"
+    field_type: "email"
+    priority: 1
+    validation_regex: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+
+  phone:
+    field_id: "phone"
+    display_name: "Phone Number"
+    field_type: "phone"
+    priority: 1

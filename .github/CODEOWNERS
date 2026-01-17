@@ -1,0 +1,32 @@
+# =============================================================================
+# CODEOWNERS - Automatic Review Assignment
+# =============================================================================
+# These owners will be automatically requested for review when someone opens
+# a pull request that modifies code that they own.
+#
+# Order matters: later patterns take precedence over earlier ones.
+
+# Default owners for everything
+*                           @umairzamir
+
+# SDK Core
+/sdk/                       @umairzamir
+/sdk/guards/                @umairzamir
+/sdk/verification/          @umairzamir
+/sdk/registry/              @umairzamir
+
+# Security-sensitive files (require additional review)
+/sdk/guards/security.py     @umairzamir
+/.github/workflows/         @umairzamir
+/pyproject.toml             @umairzamir
+
+# Tests
+/tests/                     @umairzamir
+
+# Documentation
+/docs/                      @umairzamir
+*.md                        @umairzamir
+
+# Configuration (high impact)
+/.3sr/config.yaml           @umairzamir
+/.pre-commit-config.yaml    @umairzamir

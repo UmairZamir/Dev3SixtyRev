@@ -1,0 +1,1837 @@
+# =============================================================================
+# COMPREHENSIVE PLATFORM FIELD REGISTRY V2.0 - PART 1 OF 5
+# =============================================================================
+# Generated: 2025-01-08
+# Source Files: field_extractors.py (3116 lines), base_schema.yaml, entities.yaml,
+#               intents.yaml, classifier.py, product_router.py
+#
+# This file contains:
+# - PART 1: Core Enums & Data Types (15 enum types, 200+ values)
+# - PART 2: Universal Fields (16 fields with full extraction patterns)
+# - PART 3: Insurance Industry Fields (200+ fields across 6 products)
+# =============================================================================
+
+# =============================================================================
+# PART 1: CORE ENUMS & DATA TYPES
+# =============================================================================
+
+core_enums:
+
+  # ---------------------------------------------------------------------------
+  # AI Mode - Controls operational behavior
+  # ---------------------------------------------------------------------------
+  ai_mode:
+    type: "enum"
+    source: "base_schema.yaml, router.py"
+    ui_component: "dropdown"
+    api_parameter: "ai_mode"
+    database_column: "campaigns.ai_mode"
+    
+    values:
+      - id: "assistant"
+        display_name: "Assistant Mode"
+        description: "Qualitative, educational approach for regulated industries"
+        type: "qualitative"
+        authority:
+          pricing: "cannot_quote"
+          recommendations: "cannot_recommend"
+          binding: "cannot_bind"
+          appointments: "can_schedule"
+          handoff: "always_required"
+        max_aggressiveness: 4
+        blocked_industries: []
+        allowed_industries:
+          - insurance
+          - real_estate
+          - mortgage
+          - healthcare
+          - financial_services
+        
+      - id: "agent"
+        display_name: "Agent Mode"
+        description: "Quantitative, full authority for non-regulated industries"
+        type: "quantitative"
+        authority:
+          pricing: "full"
+          recommendations: "full"
+          binding: "full"
+          appointments: "can_schedule"
+          handoff: "optional"
+        max_aggressiveness: 10
+        blocked_industries:
+          - insurance
+          - real_estate
+          - mortgage
+          - healthcare
+          - financial_services
+        
+      - id: "service"
+        display_name: "Service Mode"
+        description: "Reactive service handling for existing customers"
+        type: "reactive"
+        authority:
+          pricing: "cannot_quote"
+          recommendations: "limited"
+          binding: "cannot_bind"
+          appointments: "can_schedule"
+          handoff: "as_needed"
+        max_aggressiveness: 2
+        allowed_industries: "all"
+
+  # ---------------------------------------------------------------------------
+  # Channel - Communication channel types
+  # ---------------------------------------------------------------------------
+  channel:
+    type: "enum"
+    source: "base_schema.yaml, channels/*.yaml"
+    ui_component: "dropdown"
+    api_parameter: "channel"
+    database_column: "campaigns.channel"
+    
+    values:
+      - id: "voice"
+        display_name: "Voice Call"
+        constraints:
+          fillers_enabled: true
+          filler_words: ["um", "uh", "well", "so", "let me see", "you know"]
+          backchanneling: true
+          backchannel_phrases: ["mm-hmm", "I see", "right", "okay", "got it", "sure"]
+          confirmations_required: true
+          target_duration_min: 5
+          target_duration_max: 8
+          max_duration_min: 15
+        
+      - id: "sms"
+        display_name: "SMS"
+        constraints:
+          max_chars: 160
+          hard_limit: true
+          tone: "casual"
+          emoji_max: 1
+          sending_hours_start: "09:00"
+          sending_hours_end: "21:00"
+          timezone: "customer_local"
+          opt_out_required: true
+          frequency_limit_per_day: 3
+        allowed_abbreviations:
+          - {abbrev: "info", full: "information"}
+          - {abbrev: "appt", full: "appointment"}
+          - {abbrev: "mins", full: "minutes"}
+          - {abbrev: "msg", full: "message"}
+          - {abbrev: "pls", full: "please"}
+          - {abbrev: "thx", full: "thanks"}
+          - {abbrev: "asap", full: "as soon as possible"}
+          - {abbrev: "fyi", full: "for your information"}
+          - {abbrev: "lmk", full: "let me know"}
+          - {abbrev: "btw", full: "by the way"}
+          - {abbrev: "re:", full: "regarding"}
+          - {abbrev: "bc", full: "because"}
+          
+      - id: "email"
+        display_name: "Email"
+        constraints:
+          word_count_min: 100
+          word_count_max: 250
+          paragraphs_max: 4
+          requires_greeting: true
+          requires_closing: true
+          requires_signature: true
+          unsubscribe_required: true
+          sender_identification: true
+          subject_max_chars: 60
+          response_target_hours: 4
+          response_max_hours: 24
+          
+      - id: "chat"
+        display_name: "Web/App Chat"
+        constraints:
+          word_count_min: 15
+          word_count_max: 50
+          typing_indicators: true
+          delay_before_response_ms: 500
+          simulate_typing: true
+          split_threshold_words: 40
+          max_messages_per_response: 3
+          delay_between_messages_ms: 800
+        interactive_elements:
+          quick_replies_enabled: true
+          max_quick_replies: 4
+          carousels_enabled: true
+          buttons_enabled: true
+
+  # ---------------------------------------------------------------------------
+  # Participant Role
+  # ---------------------------------------------------------------------------
+  participant_role:
+    type: "enum"
+    values:
+      - id: "customer"
+        description: "The end customer/prospect"
+      - id: "ai_assistant"
+        description: "The AI assistant"
+      - id: "human_agent"
+        description: "Human agent who may take over"
+      - id: "system"
+        description: "System-generated messages"
+
+  # ---------------------------------------------------------------------------
+  # Turn Type - Types of conversation turns
+  # ---------------------------------------------------------------------------
+  turn_type:
+    type: "enum"
+    source: "base_schema.yaml"
+    values:
+      - id: "greeting"
+        description: "Opening greeting"
+      - id: "question"
+        description: "Question to gather information"
+      - id: "answer"
+        description: "Response to a question"
+      - id: "objection"
+        description: "Customer objection or concern"
+      - id: "objection_response"
+        description: "Response to customer objection"
+      - id: "clarification"
+        description: "Request or provide clarification"
+      - id: "acknowledgment"
+        description: "Acknowledge customer's statement"
+      - id: "confirmation"
+        description: "Confirm collected information"
+      - id: "transition"
+        description: "Transition between topics or products"
+      - id: "cross_sell_seed"
+        description: "Introduction of cross-sell opportunity"
+      - id: "cross_sell_response"
+        description: "Customer response to cross-sell"
+      - id: "referral_request"
+        description: "Request for referral"
+      - id: "referral_response"
+        description: "Customer response to referral request"
+      - id: "appointment_request"
+        description: "Offer to schedule appointment"
+      - id: "appointment_confirmation"
+        description: "Confirm appointment details"
+      - id: "handoff_initiation"
+        description: "Begin handoff to human agent"
+      - id: "handoff_confirmation"
+        description: "Confirm handoff details"
+      - id: "closing"
+        description: "Closing statement"
+      - id: "follow_up"
+        description: "Follow-up message"
+      - id: "small_talk"
+        description: "Casual conversation"
+      - id: "correction"
+        description: "Correct previously provided information"
+      - id: "interruption"
+        description: "Interruption handling"
+      - id: "silence_break"
+        description: "Breaking silence in conversation"
+
+  # ---------------------------------------------------------------------------
+  # Sentiment
+  # ---------------------------------------------------------------------------
+  sentiment:
+    type: "enum"
+    values:
+      - id: "very_positive"
+        score_range: [0.7, 1.0]
+        indicators: ["excited", "thrilled", "love it", "perfect", "amazing"]
+      - id: "positive"
+        score_range: [0.3, 0.7]
+        indicators: ["good", "sounds good", "interested", "nice", "helpful"]
+      - id: "neutral"
+        score_range: [-0.3, 0.3]
+        indicators: ["okay", "alright", "I see", "I understand"]
+      - id: "negative"
+        score_range: [-0.7, -0.3]
+        indicators: ["concerned", "worried", "not sure", "hesitant"]
+      - id: "very_negative"
+        score_range: [-1.0, -0.7]
+        indicators: ["angry", "frustrated", "terrible", "horrible", "awful"]
+
+  # ---------------------------------------------------------------------------
+  # Conversation Outcome
+  # ---------------------------------------------------------------------------
+  conversation_outcome:
+    type: "enum"
+    source: "outcomes.yaml"
+    ui_component: "dropdown"
+    api_parameter: "target_outcome"
+    
+    categories:
+      successful:
+        - id: "qualified_handoff"
+          display_name: "Qualified Handoff"
+          description: "Customer fully qualified and handed off to agent"
+          disposition_code: "QUAL_COMPLETE"
+          required_fields_complete: true
+          
+        - id: "appointment_scheduled"
+          display_name: "Appointment Scheduled"
+          description: "Appointment booked with agent"
+          disposition_code: "APPT_SET"
+          required_data: ["appointment_date", "appointment_time"]
+          
+        - id: "sale_closed"
+          display_name: "Sale Closed"
+          description: "Sale completed in conversation"
+          disposition_code: "SALE_WON"
+          mode_requirement: "agent"
+          
+        - id: "cross_sell_accepted"
+          display_name: "Cross-Sell Accepted"
+          description: "Customer accepted cross-sell offer"
+          disposition_code: "XSELL_ACCEPT"
+          
+        - id: "referral_obtained"
+          display_name: "Referral Obtained"
+          description: "Customer provided referral"
+          disposition_code: "REFERRAL"
+          required_data: ["referral_name", "referral_contact"]
+          
+        - id: "service_request_complete"
+          display_name: "Service Request Complete"
+          description: "Service request fulfilled"
+          disposition_code: "SVC_COMPLETE"
+          
+        - id: "renewal_complete"
+          display_name: "Renewal Complete"
+          description: "Policy renewal processed"
+          disposition_code: "RENEWAL"
+
+      partial_success:
+        - id: "partial_qualification"
+          display_name: "Partial Qualification"
+          disposition_code: "QUAL_PARTIAL"
+          follow_up_priority: "high"
+          
+        - id: "cross_sell_deferred"
+          display_name: "Cross-Sell Deferred"
+          disposition_code: "XSELL_DEFER"
+          
+        - id: "referral_deferred"
+          display_name: "Referral Deferred"
+          disposition_code: "REFERRAL_DEFER"
+          
+        - id: "callback_scheduled"
+          display_name: "Callback Scheduled"
+          disposition_code: "CALLBACK"
+          required_data: ["callback_date", "callback_time"]
+          
+        - id: "information_sent"
+          display_name: "Information Sent"
+          disposition_code: "INFO_SENT"
+          follow_up_timing: "48_hours"
+
+      objection_related:
+        - id: "objection_resolved"
+          display_name: "Objection Resolved"
+          disposition_code: "OBJ_RESOLVED"
+          
+        - id: "objection_unresolved"
+          display_name: "Objection Unresolved"
+          disposition_code: "OBJ_UNRESOLVED"
+          follow_up_priority: "medium"
+          
+        - id: "price_objection_pending"
+          display_name: "Price Objection Pending"
+          disposition_code: "PRICE_PENDING"
+          escalation_required: true
+
+      exit:
+        - id: "graceful_exit"
+          display_name: "Graceful Exit"
+          disposition_code: "NOT_INTERESTED"
+          cool_down_period_days: 90
+          
+        - id: "customer_hangup"
+          display_name: "Customer Disconnected"
+          disposition_code: "HANGUP"
+          follow_up_priority: "high"
+          
+        - id: "do_not_contact"
+          display_name: "Do Not Contact"
+          disposition_code: "DNC"
+          compliance_critical: true
+          
+        - id: "competitor_chosen"
+          display_name: "Chose Competitor"
+          disposition_code: "LOST_COMPETITOR"
+          win_back_eligible: true
+          cool_down_period_days: 180
+          
+        - id: "timing_not_right"
+          display_name: "Timing Not Right"
+          disposition_code: "TIMING"
+
+      escalation:
+        - id: "escalated_to_human"
+          display_name: "Escalated to Human"
+          disposition_code: "ESCALATED"
+          
+        - id: "manager_requested"
+          display_name: "Manager Requested"
+          disposition_code: "MGR_REQUEST"
+          priority: "high"
+          
+        - id: "complaint_escalation"
+          display_name: "Complaint Escalation"
+          disposition_code: "COMPLAINT"
+          priority: "urgent"
+          
+        - id: "technical_escalation"
+          display_name: "Technical Escalation"
+          disposition_code: "TECH_ESC"
+
+      incomplete:
+        - id: "abandoned"
+          display_name: "Conversation Abandoned"
+          disposition_code: "ABANDONED"
+          follow_up_priority: "medium"
+          
+        - id: "timeout"
+          display_name: "Session Timeout"
+          disposition_code: "TIMEOUT"
+          
+        - id: "technical_error"
+          display_name: "Technical Error"
+          disposition_code: "TECH_ERROR"
+
+  # ---------------------------------------------------------------------------
+  # Qualification Status
+  # ---------------------------------------------------------------------------
+  qualification_status:
+    type: "enum"
+    values:
+      - id: "not_started"
+        description: "Qualification has not begun"
+      - id: "in_progress"
+        description: "Qualification is ongoing"
+        progress_trackable: true
+      - id: "complete"
+        description: "All required fields collected"
+      - id: "incomplete"
+        description: "Some fields missing but conversation ended"
+      - id: "disqualified"
+        description: "Customer does not meet criteria"
+        reasons: ["location", "budget", "timeline", "product_fit"]
+
+  # ---------------------------------------------------------------------------
+  # Signal Strength
+  # ---------------------------------------------------------------------------
+  signal_strength:
+    type: "enum"
+    values:
+      - id: "high"
+        score_range: [0.8, 1.0]
+        action: "immediate_response"
+      - id: "medium"
+        score_range: [0.5, 0.79]
+        action: "prioritize"
+      - id: "low"
+        score_range: [0.3, 0.49]
+        action: "note_for_follow_up"
+      - id: "negative"
+        score_range: [-1.0, 0.0]
+        action: "address_concern"
+
+  # ---------------------------------------------------------------------------
+  # Field Type - Data types for qualification fields
+  # ---------------------------------------------------------------------------
+  field_type:
+    type: "enum"
+    source: "product_router.py"
+    
+    values:
+      - id: "text"
+        description: "Free text input"
+        validation: "string"
+        max_length: 500
+        
+      - id: "number"
+        description: "Numeric value"
+        validation: "integer|float"
+        
+      - id: "email"
+        description: "Email address"
+        validation: "email_regex"
+        pattern: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}"
+        
+      - id: "phone"
+        description: "Phone number"
+        validation: "phone_regex"
+        patterns:
+          - '\(?\d{3}\)?[-\.\s]?\d{3}[-\.\s]?\d{4}'
+          - '\+?1?[-\.\s]?\(?\d{3}\)?[-\.\s]?\d{3}[-\.\s]?\d{4}'
+        format_output: "(XXX) XXX-XXXX"
+        
+      - id: "date"
+        description: "Date value"
+        validation: "date_format"
+        formats: ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD", "Month DD, YYYY"]
+        
+      - id: "select"
+        description: "Single selection from options"
+        validation: "in_options"
+        
+      - id: "multiselect"
+        description: "Multiple selections from options"
+        validation: "subset_of_options"
+        
+      - id: "radio"
+        description: "Single selection radio buttons"
+        validation: "in_options"
+        
+      - id: "checkbox"
+        description: "Boolean checkbox"
+        validation: "boolean"
+        
+      - id: "address"
+        description: "Full address"
+        validation: "address_components"
+        components: ["street", "city", "province_state", "postal_code", "country"]
+        
+      - id: "currency"
+        description: "Monetary amount"
+        validation: "currency_format"
+        multipliers:
+          k: 1000
+          thousand: 1000
+          m: 1000000
+          million: 1000000
+          b: 1000000000
+          billion: 1000000000
+          
+      - id: "year"
+        description: "Year value"
+        validation: "year_range"
+        
+      - id: "vin"
+        description: "Vehicle Identification Number"
+        validation: "vin_format"
+        pattern: "[A-HJ-NPR-Z0-9]{17}"
+        length: 17
+        
+      - id: "postal_code"
+        description: "Postal/ZIP code"
+        validation: "postal_format"
+        patterns:
+          canada: "[A-Za-z]\\d[A-Za-z][ -]?\\d[A-Za-z]\\d"
+          us: "\\d{5}(?:-\\d{4})?"
+          
+      - id: "province_state"
+        description: "Province or state"
+        validation: "province_state_code"
+        
+      - id: "boolean"
+        description: "Yes/No value"
+        validation: "boolean"
+
+  # ---------------------------------------------------------------------------
+  # Intent Types (from classifier.py)
+  # ---------------------------------------------------------------------------
+  intent_type:
+    type: "enum"
+    source: "classifier.py"
+    priority_order: true
+    
+    values:
+      - id: "ai_disclosure"
+        priority: 1
+        description: "Customer asking if they're talking to AI"
+        route_to: "ai_disclosure_handler"
+        always_check_first: true
+        
+      - id: "not_interested"
+        priority: 2
+        description: "Customer expressing no interest"
+        route_to: "graceful_exit"
+        
+      - id: "objection"
+        priority: 3
+        description: "Customer raising an objection"
+        route_to: "G2_Objection"
+        
+      - id: "booking"
+        priority: 4
+        description: "Customer ready to book/schedule"
+        route_to: "G7_Appointment"
+        
+      - id: "inquiry"
+        priority: 5
+        description: "Customer asking questions"
+        route_to: "G1_Qualification"
+        
+      - id: "upsell"
+        priority: 6
+        description: "Opportunity for upsell/cross-sell"
+        route_to: "G3_CrossSell"
+        
+      - id: "returning"
+        priority: 7
+        description: "Returning customer"
+        route_to: "G5_WinBack"
+
+  # ---------------------------------------------------------------------------
+  # Objection Categories (from OBJECTION_HANDLING_ENHANCEMENT_SUMMARY.md)
+  # ---------------------------------------------------------------------------
+  objection_category:
+    type: "enum"
+    source: "hard_objection_mix.yaml, OBJECTION_HANDLING_ENHANCEMENT_SUMMARY.md"
+    
+    values:
+      - id: "price_budget"
+        display_name: "Price/Budget"
+        sub_types:
+          - id: "too_expensive"
+            indicators: ["too expensive", "too much", "can't afford", "out of budget", "pricey", "costly", "ridiculous"]
+            response_strategy: "value_reframe"
+            
+          - id: "competitor_cheaper"
+            indicators: ["cheaper elsewhere", "got a better quote", "competitor is less", "found it for less", "$40 cheaper", "$50 more than"]
+            response_strategy: "differentiation"
+            
+          - id: "not_in_budget"
+            indicators: ["not in budget", "budget is tight", "saving money", "cutting costs"]
+            response_strategy: "flexible_options"
+            
+          - id: "need_to_check_finances"
+            indicators: ["check my finances", "look at budget", "see what I can afford"]
+            response_strategy: "schedule_follow_up"
+        
+      - id: "timing"
+        display_name: "Timing"
+        sub_types:
+          - id: "not_right_now"
+            indicators: ["not now", "bad timing", "busy right now", "not a good time", "too busy"]
+            response_strategy: "schedule_better_time"
+            
+          - id: "just_renewed"
+            indicators: ["just renewed", "renewed recently", "policy just started", "renewed last month"]
+            response_strategy: "future_planning"
+            
+          - id: "expiring_later"
+            indicators: ["expires later", "not due yet", "several months left", "6 months left"]
+            response_strategy: "early_quote_benefit"
+            
+          - id: "need_more_time"
+            indicators: ["need time to think", "let me consider", "sleep on it", "get back to you in a few weeks"]
+            response_strategy: "create_urgency_softly"
+        
+      - id: "authority_decision"
+        display_name: "Authority/Decision Making"
+        sub_types:
+          - id: "spouse_partner"
+            indicators: ["talk to spouse", "check with partner", "husband", "wife", "partner handles", "my spouse said"]
+            response_strategy: "include_decision_maker"
+            
+          - id: "someone_else_decides"
+            indicators: ["someone else decides", "not my decision", "need approval"]
+            response_strategy: "identify_decision_maker"
+            
+          - id: "committee_board"
+            indicators: ["board approval", "committee", "multiple stakeholders"]
+            response_strategy: "provide_materials"
+        
+      - id: "trust_credibility"
+        display_name: "Trust/Credibility"
+        sub_types:
+          - id: "never_heard_of_you"
+            indicators: ["never heard of", "don't know your company", "who are you", "how do I know you're legitimate"]
+            response_strategy: "establish_credibility"
+            
+          - id: "bad_experience_industry"
+            indicators: ["bad experience", "burned before", "don't trust", "all the same", "all insurance companies are scams"]
+            response_strategy: "differentiate_acknowledge"
+            
+          - id: "want_references"
+            indicators: ["want references", "testimonials", "reviews", "other customers"]
+            response_strategy: "provide_social_proof"
+        
+      - id: "need_value"
+        display_name: "Need/Value"
+        sub_types:
+          - id: "dont_need_it"
+            indicators: ["don't need", "not necessary", "getting by without", "seems like overkill"]
+            response_strategy: "uncover_hidden_need"
+            
+          - id: "happy_with_current"
+            indicators: ["happy with current", "satisfied", "works fine", "no issues", "never had an issue with my current provider"]
+            response_strategy: "explore_improvement"
+            
+          - id: "dont_see_value"
+            indicators: ["don't see value", "what's the point", "why would I"]
+            response_strategy: "demonstrate_value"
+        
+      - id: "competitor"
+        display_name: "Competitor"
+        sub_types:
+          - id: "using_competitor"
+            indicators: ["using X", "with X already", "have X"]
+            response_strategy: "competitive_positioning"
+            
+          - id: "loyal_to_competitor"
+            indicators: ["loyal to", "been with them for years", "like X"]
+            response_strategy: "respectful_comparison"
+            
+          - id: "competitor_recommended"
+            indicators: ["friend recommended", "was told to use", "everyone uses"]
+            response_strategy: "alternative_perspective"
+        
+      - id: "hassle_effort"
+        display_name: "Hassle/Effort"
+        sub_types:
+          - id: "too_much_work"
+            indicators: ["too much work", "hassle", "complicated", "too much effort", "don't want to deal with"]
+            response_strategy: "simplify_process"
+            
+          - id: "paperwork"
+            indicators: ["paperwork", "forms", "documentation", "phone calls"]
+            response_strategy: "minimize_effort"
+            
+          - id: "switching_costs"
+            indicators: ["switching is hard", "don't want to switch", "too much change", "not worth the hassle"]
+            response_strategy: "handle_transition"
+        
+      - id: "information"
+        display_name: "Information/Research"
+        sub_types:
+          - id: "need_more_info"
+            indicators: ["need more information", "want to learn more", "researching"]
+            response_strategy: "provide_information"
+            
+          - id: "want_to_compare"
+            indicators: ["want to compare", "shopping around", "looking at options"]
+            response_strategy: "encourage_comparison"
+            
+          - id: "too_early"
+            indicators: ["too early", "just starting", "early stages"]
+            response_strategy: "nurture"
+        
+      - id: "risk_fear"
+        display_name: "Risk/Fear"
+        sub_types:
+          - id: "fear_of_change"
+            indicators: ["afraid of change", "what if it doesn't work", "risky"]
+            response_strategy: "reduce_risk"
+            
+          - id: "commitment_fear"
+            indicators: ["don't want to commit", "locked in", "trapped"]
+            response_strategy: "flexibility_options"
+            
+          - id: "past_bad_experience"
+            indicators: ["had bad experience", "burned before", "didn't work last time"]
+            response_strategy: "address_past"
+        
+      - id: "hard_rejection"
+        display_name: "Hard Rejection"
+        sub_types:
+          - id: "not_interested"
+            indicators: ["not interested", "no thanks", "not for me"]
+            max_recovery_attempts: 1
+            response_strategy: "soft_exit"
+            
+          - id: "stop_contacting"
+            indicators: ["stop calling", "don't contact", "leave me alone"]
+            compliance_action: "add_to_dnc"
+            response_strategy: "graceful_exit"
+            max_recovery_attempts: 0
+            
+          - id: "absolute_no"
+            indicators: ["absolutely not", "never", "under no circumstances"]
+            max_recovery_attempts: 0
+            response_strategy: "respect_and_exit"
+
+# =============================================================================
+# PART 2: UNIVERSAL FIELDS (All Industries)
+# =============================================================================
+
+universal_fields:
+
+  # ---------------------------------------------------------------------------
+  # Contact Information
+  # ---------------------------------------------------------------------------
+  contact:
+    - field_id: "customer_name"
+      display_name: "Full Name"
+      field_type: "text"
+      required: true
+      priority: 1
+      source: "field_extractors.py lines 436-491"
+      
+      extraction_patterns:
+        - pattern: "my name is {value}"
+          confidence: 0.95
+        - pattern: "my name's {value}"
+          confidence: 0.95
+        - pattern: "i'm {value}"
+          confidence: 0.85
+        - pattern: "i am {value}"
+          confidence: 0.85
+        - pattern: "im {value}"
+          confidence: 0.85
+        - pattern: "call me {value}"
+          confidence: 0.90
+        - pattern: "this is {value}"
+          confidence: 0.85
+          
+      # Words to exclude from name extraction (from field_extractors.py lines 344-412)
+      excluded_words:
+        status_words:
+          - "looking"
+          - "interested"
+          - "calling"
+          - "here"
+          - "good"
+          - "fine"
+          - "okay"
+          - "great"
+          - "ready"
+          - "hoping"
+          - "trying"
+          - "wondering"
+          - "thinking"
+          - "needing"
+          - "wanting"
+          - "available"
+          - "able"
+          - "happy"
+          - "glad"
+          - "sorry"
+          - "sure"
+          - "certain"
+          - "contacting"
+          - "reaching"
+          - "inquiring"
+          - "asking"
+          - "checking"
+        articles_common:
+          - "a"
+          - "an"
+          - "the"
+          - "not"
+          - "very"
+          - "really"
+          - "just"
+          - "also"
+        actions:
+          - "done"
+          - "finished"
+          - "back"
+          - "home"
+          - "there"
+        status:
+          - "new"
+          - "old"
+          - "young"
+          - "single"
+          - "married"
+          - "retired"
+        objection_words:
+          - "too"
+          - "expensive"
+          - "much"
+          - "cheap"
+          - "pricey"
+          - "costly"
+          - "affordable"
+          - "unaffordable"
+        sentiment_words:
+          - "busy"
+          - "frustrated"
+          - "annoyed"
+          - "confused"
+          - "unsure"
+          - "hesitant"
+          
+      # Trailing phrases to strip (from field_extractors.py lines 416-434)
+      trailing_phrases_to_strip:
+        - "by the way"
+        - "btw"
+        - "though"
+        - "anyway"
+        - "actually"
+        - "speaking"
+        - "calling"
+        - "here"
+        - "from"
+        - "and i"
+        - "and my"
+        - "looking for"
+        - "interested in"
+        - "hoping to"
+        - "trying to"
+        - "wanting to"
+        - "needing"
+        
+      # Unicode support for international names
+      unicode_support: true
+      supported_characters: "A-Za-zÀ-ÖØ-öø-ÿĀ-žА-яЁё'"
+      examples:
+        - "María O'Brien-García"
+        - "José"
+        - "Müller"
+        - "François"
+      
+    - field_id: "email"
+      display_name: "Email Address"
+      field_type: "email"
+      required: false
+      priority: 2
+      source: "field_extractors.py lines 548-560"
+      
+      extraction_pattern: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b"
+      confidence_threshold: 0.98
+      normalization: "lowercase"
+      
+    - field_id: "phone"
+      display_name: "Phone Number"
+      field_type: "phone"
+      required: false
+      priority: 2
+      source: "field_extractors.py lines 562-596"
+      
+      extraction_patterns:
+        - pattern: '\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+          description: "Standard US/Canada"
+        - pattern: '\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+          description: "With country code"
+          
+      noise_removal_pattern: "(?:my\\s+(?:phone|number|cell)\\s+(?:is|number)?:?\\s*)"
+      output_format: "(XXX) XXX-XXXX"
+      confidence_threshold: 0.95
+      
+      validation:
+        digits_required: 10
+        strip_leading_1: true
+
+  # ---------------------------------------------------------------------------
+  # Address Fields
+  # ---------------------------------------------------------------------------
+  address:
+    - field_id: "full_address"
+      display_name: "Full Address"
+      field_type: "address"
+      required: false
+      priority: 3
+      source: "field_extractors.py lines 1101-1144"
+      components: ["street", "city", "province_state", "postal_code"]
+      
+      # Street suffixes for extraction
+      street_suffixes:
+        - {abbrev: "st", full: "street"}
+        - {abbrev: "ave", full: "avenue"}
+        - {abbrev: "blvd", full: "boulevard"}
+        - {abbrev: "rd", full: "road"}
+        - {abbrev: "dr", full: "drive"}
+        - {abbrev: "ln", full: "lane"}
+        - {abbrev: "ct", full: "court"}
+        - {abbrev: "pl", full: "place"}
+        - {abbrev: "way", full: "way"}
+        - {abbrev: "cir", full: "circle"}
+        - {abbrev: "pkwy", full: "parkway"}
+        - {abbrev: "hwy", full: "highway"}
+        - {abbrev: "tr", full: "trail"}
+        
+      # False positive indicators (from field_extractors.py lines 1071-1098)
+      false_positive_indicators:
+        articles_after: ["a", "an", "the"]
+        possessives_after: ["my", "your", "his", "her", "our", "their", "its"]
+        prepositions_after: ["to", "for", "with", "around", "over", "through"]
+        pronouns_before: ["i", "you", "we", "they", "he", "she", "it"]
+      
+    - field_id: "city"
+      display_name: "City"
+      field_type: "text"
+      required: false
+      priority: 3
+      
+    - field_id: "province_state"
+      display_name: "Province/State"
+      field_type: "province_state"
+      required: false
+      priority: 3
+      source: "field_extractors.py lines 257-314, 656-711"
+      
+      # US States (from field_extractors.py lines 257-309)
+      us_states:
+        full_names:
+          alabama: "AL"
+          alaska: "AK"
+          arizona: "AZ"
+          arkansas: "AR"
+          california: "CA"
+          colorado: "CO"
+          connecticut: "CT"
+          delaware: "DE"
+          florida: "FL"
+          georgia: "GA"
+          hawaii: "HI"
+          idaho: "ID"
+          illinois: "IL"
+          indiana: "IN"
+          iowa: "IA"
+          kansas: "KS"
+          kentucky: "KY"
+          louisiana: "LA"
+          maine: "ME"
+          maryland: "MD"
+          massachusetts: "MA"
+          michigan: "MI"
+          minnesota: "MN"
+          mississippi: "MS"
+          missouri: "MO"
+          montana: "MT"
+          nebraska: "NE"
+          nevada: "NV"
+          new hampshire: "NH"
+          new jersey: "NJ"
+          new mexico: "NM"
+          new york: "NY"
+          north carolina: "NC"
+          north dakota: "ND"
+          ohio: "OH"
+          oklahoma: "OK"
+          oregon: "OR"
+          pennsylvania: "PA"
+          rhode island: "RI"
+          south carolina: "SC"
+          south dakota: "SD"
+          tennessee: "TN"
+          texas: "TX"
+          utah: "UT"
+          vermont: "VT"
+          virginia: "VA"
+          washington: "WA"
+          west virginia: "WV"
+          wisconsin: "WI"
+          wyoming: "WY"
+          district of columbia: "DC"
+          
+      # Ambiguous abbreviations requiring context (from field_extractors.py line 314)
+      ambiguous_abbreviations: ["OR", "IN", "ME", "OK", "HI", "OH"]
+      ambiguous_context_pattern: "(?:from|in|live\\s+in|located\\s+in|based\\s+in|state\\s+(?:is|of))\\s+{abbrev}\\b"
+      
+      # Canadian Provinces (from field_extractors.py lines 320-337)
+      canadian_provinces:
+        alberta: "AB"
+        british columbia: "BC"
+        manitoba: "MB"
+        new brunswick: "NB"
+        newfoundland: "NL"
+        newfoundland and labrador: "NL"
+        northwest territories: "NT"
+        nova scotia: "NS"
+        nunavut: "NU"
+        ontario: "ON"
+        prince edward island: "PE"
+        quebec: "QC"
+        saskatchewan: "SK"
+        yukon: "YT"
+        
+    - field_id: "postal_code"
+      display_name: "Postal/ZIP Code"
+      field_type: "postal_code"
+      required: false
+      priority: 3
+      source: "field_extractors.py lines 598-650"
+      
+      extraction_patterns:
+        us_zip:
+          patterns:
+            - "(?:zip(?:\\s*code)?|postal)\\s*(?:is|:)?\\s*(\\d{5}(?:-\\d{4})?)"
+            - "(?:live in|located in|address)[:\\s]+.*?(\\d{5})"
+          valid_range: [501, 99950]
+          confidence_with_context: 0.95
+          confidence_standalone: 0.70
+          
+        canada_postal:
+          pattern: "[A-Za-z]\\d[A-Za-z][ -]?\\d[A-Za-z]\\d"
+          normalization: "uppercase with space"
+          confidence: 0.90
+
+  # ---------------------------------------------------------------------------
+  # Timeline Fields
+  # ---------------------------------------------------------------------------
+  timeline:
+    - field_id: "timeline"
+      display_name: "Timeline"
+      field_type: "select"
+      required: true
+      priority: 2
+      source: "field_extractors.py lines 1405-1450"
+      
+      options:
+        - id: "immediate"
+          display: "Immediately"
+          indicators: ["immediately", "asap", "right now", "today", "urgent", "emergency"]
+          urgency_score: 1.0
+          
+        - id: "this_week"
+          display: "This Week"
+          indicators: ["this week", "few days", "couple days", "in a few days"]
+          urgency_score: 0.85
+          
+        - id: "this_month"
+          display: "This Month"
+          indicators: ["this month", "few weeks", "couple weeks", "within a month"]
+          urgency_score: 0.70
+          
+        - id: "1_3_months"
+          display: "1-3 Months"
+          indicators: ["next month", "few months", "couple months", "60 days", "90 days"]
+          urgency_score: 0.50
+          
+        - id: "3_6_months"
+          display: "3-6 Months"
+          indicators: ["6 months", "half year", "later this year"]
+          urgency_score: 0.30
+          
+        - id: "6_12_months"
+          display: "6-12 Months"
+          indicators: ["next year", "year from now", "12 months"]
+          urgency_score: 0.15
+          
+        - id: "just_browsing"
+          display: "Just Browsing"
+          indicators: ["just looking", "browsing", "no timeline", "not sure when"]
+          urgency_score: 0.05
+
+  # ---------------------------------------------------------------------------
+  # Budget Fields
+  # ---------------------------------------------------------------------------
+  budget:
+    - field_id: "budget_range"
+      display_name: "Budget Range"
+      field_type: "select"
+      required: false
+      priority: 3
+      
+    - field_id: "budget_min"
+      display_name: "Minimum Budget"
+      field_type: "currency"
+      required: false
+      
+    - field_id: "budget_max"
+      display_name: "Maximum Budget"
+      field_type: "currency"
+      required: false
+      
+    - field_id: "current_spend"
+      display_name: "Current Spending"
+      field_type: "currency"
+      required: false
+      source: "field_extractors.py lines 975-1036"
+      
+      extraction_patterns:
+        dollar_sign:
+          pattern: "\\$\\s*([\\d,]+(?:\\.\\d{2})?)\\s*([kmb]|thousand|million|billion)?"
+          confidence: 0.95
+          
+        suffix_multiplier:
+          pattern: "\\b([\\d.]+)\\s*([kmb])\\b"
+          confidence: 0.90
+          
+        word_multiplier:
+          pattern: "\\b([\\d.]+)\\s+(thousand|million|billion)\\b"
+          confidence: 0.90
+          
+        context_based:
+          pattern: "(?:budget|price|cost|worth|value|around|about|approximately)\\s+(?:is\\s+)?(?:\\$?\\s*)?([\\d,]+(?:\\.\\d{2})?)"
+          confidence: 0.80
+          
+      multipliers:
+        k: 1000
+        thousand: 1000
+        m: 1000000
+        million: 1000000
+        b: 1000000000
+        billion: 1000000000
+
+  # ---------------------------------------------------------------------------
+  # Decision Making Fields
+  # ---------------------------------------------------------------------------
+  decision:
+    - field_id: "decision_maker"
+      display_name: "Is Decision Maker"
+      field_type: "boolean"
+      required: true
+      priority: 2
+      source: "field_extractors.py lines 1150-1250"
+      
+      yes_indicators:
+        - "yes"
+        - "yeah"
+        - "yep"
+        - "yup"
+        - "sure"
+        - "definitely"
+        - "absolutely"
+        - "correct"
+        - "right"
+        - "true"
+        - "affirmative"
+        - "i do"
+        - "i have"
+        - "i am"
+        
+      no_indicators:
+        - "no"
+        - "nope"
+        - "nah"
+        - "not"
+        - "don't"
+        - "dont"
+        - "haven't"
+        - "havent"
+        - "never"
+        - "false"
+        - "negative"
+        - "i don't"
+        - "i dont"
+        
+      # Phrases where "no" doesn't indicate negation (from field_extractors.py lines 1184-1205)
+      no_extraction_phrases:
+        - "no problem"
+        - "no worries"
+        - "no thanks"
+        - "no thank you"
+        - "no issue"
+        - "no issues"
+        - "no rush"
+        - "no pressure"
+        - "no way"
+        - "no doubt"
+        - "no kidding"
+        - "oh no"
+        - "no big deal"
+        - "no sweat"
+        - "no need"
+        - "not a problem"
+        - "not an issue"
+        - "not at all"
+        - "not really"
+        - "not sure"
+        
+    - field_id: "other_decision_makers"
+      display_name: "Other Decision Makers"
+      field_type: "text"
+      required: false
+      priority: 3
+      depends_on:
+        field: "decision_maker"
+        condition: "equals"
+        value: false
+
+# =============================================================================
+# PART 3: INSURANCE INDUSTRY FIELDS
+# =============================================================================
+
+insurance_fields:
+
+  # ---------------------------------------------------------------------------
+  # AUTO INSURANCE
+  # ---------------------------------------------------------------------------
+  auto_insurance:
+    product_id: "auto_insurance"
+    display_name: "Auto Insurance"
+    category: "personal_lines"
+    
+    required_fields:
+      - field_id: "vehicle_year"
+        display_name: "Vehicle Year"
+        field_type: "year"
+        priority: 1
+        source: "field_extractors.py lines 879-917"
+        
+        extraction_patterns:
+          with_model_context:
+            pattern: "(19|20)\\d{2}\\s+(?:model|year)"
+            confidence: 0.95
+            
+          with_possession:
+            pattern: "(?:it's|its|it is)\\s+(?:a\\s+)?(19|20)\\d{2}"
+            confidence: 0.90
+            
+          with_ownership:
+            pattern: "(?:drive|own|have)\\s+(?:a\\s+)?(19|20)\\d{2}"
+            confidence: 0.90
+            
+        valid_range: [1980, 2026]
+        confidence_threshold: 0.90
+        
+        # Guard against DOB confusion
+        negative_guards:
+          dob_patterns: ["born", "birthday", "years old", "age"]
+          
+      - field_id: "vehicle_make"
+        display_name: "Vehicle Make"
+        field_type: "select"
+        priority: 1
+        source: "field_extractors.py lines 29-95"
+        
+        # Complete list from field_extractors.py VEHICLE_MAKES
+        known_values:
+          japanese:
+            - "toyota"
+            - "honda"
+            - "nissan"
+            - "mazda"
+            - "subaru"
+            - "mitsubishi"
+            - "suzuki"
+            - "lexus"
+            - "acura"
+            - "infiniti"
+          american:
+            - "ford"
+            - "chevrolet"
+            - "chevy"
+            - "dodge"
+            - "jeep"
+            - "ram"
+            - "gmc"
+            - "buick"
+            - "cadillac"
+            - "lincoln"
+            - "chrysler"
+            - "tesla"
+            - "rivian"
+            - "lucid"
+          german:
+            - "bmw"
+            - "mercedes"
+            - "mercedes-benz"
+            - "audi"
+            - "volkswagen"
+            - "vw"
+            - "porsche"
+            - "mini"
+          korean:
+            - "hyundai"
+            - "kia"
+            - "genesis"
+          european:
+            - "volvo"
+            - "fiat"
+            - "alfa romeo"
+            - "jaguar"
+            - "land rover"
+            - "range rover"
+            - "bentley"
+            - "rolls-royce"
+            - "maserati"
+          exotic:
+            - "ferrari"
+            - "lamborghini"
+            - "aston martin"
+            - "mclaren"
+          ev:
+            - "polestar"
+            - "fisker"
+          legacy:
+            - "oldsmobile"
+            - "pontiac"
+            - "saturn"
+            - "mercury"
+            - "plymouth"
+            - "saab"
+            - "hummer"
+            
+        normalizations:
+          chevy: "Chevrolet"
+          vw: "Volkswagen"
+          mercedes: "Mercedes-Benz"
+          
+        total_count: 56
+        confidence_threshold: 0.95
+        
+      - field_id: "vehicle_model"
+        display_name: "Vehicle Model"
+        field_type: "select"
+        priority: 1
+        source: "field_extractors.py lines 97-251"
+        
+        # Complete list from field_extractors.py VEHICLE_MODELS
+        known_values:
+          toyota:
+            - "camry"
+            - "corolla"
+            - "rav4"
+            - "highlander"
+            - "tacoma"
+            - "tundra"
+            - "prius"
+            - "4runner"
+            - "sienna"
+            - "avalon"
+            - "venza"
+            - "supra"
+            - "gr86"
+            - "crown"
+            - "sequoia"
+          honda:
+            - "accord"
+            - "civic"
+            - "cr-v"
+            - "pilot"
+            - "odyssey"
+            - "fit"
+            - "hr-v"
+            - "ridgeline"
+            - "passport"
+            - "insight"
+            - "prologue"
+            - "cr-z"
+          ford:
+            - "f-150"
+            - "f150"
+            - "f-250"
+            - "f250"
+            - "mustang"
+            - "explorer"
+            - "escape"
+            - "focus"
+            - "fusion"
+            - "bronco"
+            - "ranger"
+            - "expedition"
+            - "edge"
+            - "maverick"
+            - "lightning"
+          chevrolet:
+            - "silverado"
+            - "equinox"
+            - "tahoe"
+            - "malibu"
+            - "traverse"
+            - "colorado"
+            - "camaro"
+            - "corvette"
+            - "suburban"
+            - "blazer"
+            - "trailblazer"
+            - "bolt"
+            - "trax"
+            - "impala"
+            - "cruze"
+          nissan:
+            - "altima"
+            - "sentra"
+            - "rogue"
+            - "pathfinder"
+            - "frontier"
+            - "titan"
+            - "maxima"
+            - "murano"
+            - "kicks"
+            - "armada"
+            - "versa"
+            - "leaf"
+          dodge:
+            - "charger"
+            - "challenger"
+            - "durango"
+            - "journey"
+            - "grand caravan"
+            - "dart"
+            - "hornet"
+            - "nitro"
+          jeep:
+            - "wrangler"
+            - "grand cherokee"
+            - "cherokee"
+            - "compass"
+            - "renegade"
+            - "gladiator"
+            - "wagoneer"
+            - "grand wagoneer"
+          bmw:
+            - "3 series"
+            - "5 series"
+            - "7 series"
+            - "x3"
+            - "x5"
+            - "x7"
+            - "m3"
+            - "m5"
+            - "i4"
+            - "ix"
+          mercedes:
+            - "c-class"
+            - "e-class"
+            - "s-class"
+            - "gle"
+            - "glc"
+            - "gls"
+            - "a-class"
+            - "cla"
+            - "amg gt"
+            - "eqs"
+          audi:
+            - "a4"
+            - "a6"
+            - "a8"
+            - "q5"
+            - "q7"
+            - "q8"
+            - "e-tron"
+            - "rs6"
+            - "tt"
+            - "r8"
+          tesla:
+            - "model 3"
+            - "model s"
+            - "model x"
+            - "model y"
+            - "cybertruck"
+          hyundai:
+            - "elantra"
+            - "sonata"
+            - "tucson"
+            - "santa fe"
+            - "palisade"
+            - "kona"
+            - "ioniq"
+            - "venue"
+            - "accent"
+            - "nexo"
+          kia:
+            - "optima"
+            - "k5"
+            - "sorento"
+            - "sportage"
+            - "telluride"
+            - "forte"
+            - "soul"
+            - "carnival"
+            - "niro"
+            - "ev6"
+            
+        normalizations:
+          f150: "F-150"
+          f250: "F-250"
+          
+        total_count: 120
+        confidence_threshold: 0.95
+        
+      - field_id: "primary_driver_dob"
+        display_name: "Date of Birth"
+        field_type: "date"
+        priority: 2
+        source: "field_extractors.py lines 717-800"
+        sensitivity: "high"
+        
+        context_patterns:
+          - "born"
+          - "birthday"
+          - "birth date"
+          - "dob"
+          - "date of birth"
+          - "years old"
+          - "year old"
+          - "yo "
+          - " yo "
+          - "age"
+          
+        extraction_patterns:
+          iso_format:
+            pattern: "(\\d{4}-\\d{2}-\\d{2})"
+            confidence: 0.95
+            
+          numeric_date:
+            pattern: "(\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4})"
+            confidence: 0.90
+            
+          written_month:
+            pattern: "{month_name}\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(\\d{4})"
+            confidence: 0.90
+            
+          age_calculation:
+            pattern: "(?:i'?m|i am|age)\\s*(\\d{2})\\b"
+            type: "calculate_from_age"
+            
+        valid_age_range: [16, 100]
+        confidence_threshold: 0.90
+        
+      - field_id: "primary_driver_gender"
+        display_name: "Gender"
+        field_type: "select"
+        priority: 3
+        
+        options:
+          - id: "male"
+            display: "Male"
+          - id: "female"
+            display: "Female"
+          - id: "non-binary"
+            display: "Non-Binary"
+          - id: "prefer_not_to_say"
+            display: "Prefer Not to Say"
+            
+      - field_id: "years_licensed"
+        display_name: "Years Licensed"
+        field_type: "number"
+        priority: 2
+        source: "field_extractors.py lines 1785-1798"
+        
+        extraction_patterns:
+          - pattern: "(?:licensed|driving)\\s+(?:for\\s+)?(\\d+)\\s*(?:year|yr)"
+            confidence: 0.90
+          - pattern: "(\\d+)\\s*(?:year|yr)s?\\s+(?:driving|licensed)"
+            confidence: 0.85
+            
+        valid_range: [0, 80]
+        
+      - field_id: "current_insurer"
+        display_name: "Current Insurance Company"
+        field_type: "text"
+        priority: 2
+        source: "field_extractors.py lines 1940-1953"
+        
+        known_insurers:
+          us:
+            - "State Farm"
+            - "Geico"
+            - "Progressive"
+            - "Allstate"
+            - "Liberty Mutual"
+            - "Nationwide"
+            - "USAA"
+            - "Farmers"
+            - "American Family"
+            - "Travelers"
+          canada:
+            - "TD Insurance"
+            - "Intact"
+            - "Aviva"
+            - "Desjardins"
+            - "Economical"
+            - "RSA"
+            - "Wawanesa"
+            - "Co-operators"
+            - "Belair Direct"
+            
+    optional_fields:
+      - field_id: "vehicle_vin"
+        display_name: "VIN"
+        field_type: "vin"
+        priority: 4
+        
+        validation:
+          pattern: "[A-HJ-NPR-Z0-9]{17}"
+          length: 17
+          excluded_chars: ["I", "O", "Q"]
+          
+      - field_id: "vehicle_use"
+        display_name: "Vehicle Use"
+        field_type: "select"
+        priority: 3
+        
+        options:
+          - id: "commute"
+            display: "Commute to Work"
+            description: "Regular commute to workplace"
+          - id: "pleasure"
+            display: "Pleasure/Personal"
+            description: "Personal use only"
+          - id: "business"
+            display: "Business Use"
+            description: "Business purposes"
+          - id: "rideshare"
+            display: "Rideshare (Uber/Lyft)"
+            description: "Rideshare driving"
+            requires_additional_coverage: true
+            
+      - field_id: "annual_mileage"
+        display_name: "Annual Mileage"
+        field_type: "number"
+        priority: 3
+        source: "field_extractors.py lines 1866-1921"
+        
+        extraction_patterns:
+          explicit_mileage:
+            patterns:
+              - "(\\d{1,6})\\s*(?:k)?\\s*miles?\\s*(?:per|a|each)\\s*year"
+              - "(\\d{1,6})\\s*(?:k)?\\s*miles?\\s*(?:annually|yearly)"
+              - "drive\\s+(?:about|around)?\\s*(\\d{1,6})\\s*(?:k)?\\s*miles?"
+            confidence: 0.95
+            
+        semantic_triggers:
+          - "mile"
+          - "mileage"
+          - "annually"
+          - "per year"
+          - "a year"
+          - "yearly"
+          
+        valid_range: [1000, 100000]
+        
+        guards:
+          year_like_range: [1900, 2100]
+          zip_like_range: [10000, 99999]
+          common_mileages_exempt: [10000, 12000, 15000, 20000, 25000, 30000]
+          
+      - field_id: "commute_miles"
+        display_name: "Daily Commute (miles)"
+        field_type: "number"
+        priority: 4
+        source: "field_extractors.py lines 1923-1937"
+        
+        semantic_triggers:
+          - "commute"
+          - "work"
+          - "each way"
+          - "one way"
+          - "round trip"
+          - "office"
+          
+        valid_range: [0, 200]
+        
+      - field_id: "accidents_last_5_years"
+        display_name: "Accidents (Last 5 Years)"
+        field_type: "number"
+        priority: 2
+        source: "field_extractors.py lines 1834-1848"
+        
+        semantic_triggers:
+          - "accident"
+          - "crash"
+          - "collision"
+          - "wreck"
+          - "fender bender"
+          - "totaled"
+          
+        valid_range: [0, 10]
+        premium_impact: "high"
+        
+      - field_id: "traffic_violations"
+        display_name: "Traffic Violations"
+        field_type: "number"
+        priority: 3
+        source: "field_extractors.py lines 1850-1864"
+        
+        semantic_triggers:
+          - "ticket"
+          - "violation"
+          - "speeding"
+          - "citation"
+          - "infraction"
+          - "dui"
+          - "dwi"
+          
+        valid_range: [0, 20]
+        premium_impact: "high"
+        
+      - field_id: "homeowner"
+        display_name: "Homeowner"
+        field_type: "boolean"
+        priority: 3
+        cross_sell_trigger:
+          target_product: "home_insurance"
+          relevance_score: 85
+          bundle_discount: "15-25%"
+          
+      - field_id: "garaging_address"
+        display_name: "Where Vehicle is Garaged"
+        field_type: "address"
+        priority: 4
+        description: "Where the vehicle is primarily kept"
+        
+      - field_id: "years_at_address"
+        display_name: "Years at Current Address"
+        field_type: "number"
+        priority: 4
+        source: "field_extractors.py lines 1804-1832"
+        
+        semantic_triggers:
+          - "lived"
+          - "address"
+          - "moved"
+          - "living"
+          - "been at"
+          - "stay"
+          - "residence"
+          - "resided"
+          
+        negative_guards:
+          - "years old"
+          - "year old"
+          - "yo "
+          - " yo "
+          - "age"
+          
+        extraction_patterns:
+          - "(?:lived|living|stayed|been)\\s+(?:here|there)?\\s*(?:for\\s+)?(\\d+)\\s*(?:year|yr)"
+          - "(\\d+)\\s*(?:year|yr)s?\\s+(?:at\\s+)?(?:this|my|the)?\\s*(?:address|place|home)"
+          
+        valid_range: [0, 100]
+        
+      - field_id: "ownership_status"
+        display_name: "Vehicle Ownership Status"
+        field_type: "select"
+        priority: 3
+        source: "field_extractors.py lines 2567-2589"
+        
+        options:
+          - id: "own"
+            display: "Own Outright"
+            indicators: ["own", "owned", "paid off", "outright", "no payment"]
+            lender_required: false
+            
+          - id: "lease"
+            display: "Leased"
+            indicators: ["lease", "leasing", "leased"]
+            lender_required: true
+            
+          - id: "finance"
+            display: "Financed"
+            indicators: ["finance", "financing", "financed", "loan", "making payment", "car payment"]
+            lender_required: true
+            
+      - field_id: "body_type"
+        display_name: "Vehicle Body Type"
+        field_type: "select"
+        priority: 4
+        source: "field_extractors.py lines 2544-2565"
+        
+        options:
+          - id: "sedan"
+            indicators: ["sedan", "4 door", "four door"]
+          - id: "suv"
+            indicators: ["suv", "sport utility", "crossover"]
+          - id: "truck"
+            indicators: ["truck", "pickup", "pick-up", "pick up"]
+          - id: "coupe"
+            indicators: ["coupe", "2 door", "two door"]
+          - id: "van"
+            indicators: ["van", "minivan", "mini-van"]
+          - id: "wagon"
+            indicators: ["wagon", "station wagon"]
+          - id: "convertible"
+            indicators: ["convertible", "drop top", "ragtop"]
+          - id: "hatchback"
+            indicators: ["hatchback", "hatch"]
+
+    cross_sell_triggers:
+      - trigger_field: "homeowner"
+        trigger_value: true
+        target_product: "home_insurance"
+        relevance_score: 85
+        seed_message: "Since you're a homeowner, many of our customers bundle auto and home for significant savings - typically 15-25% off."
+        
+      - trigger_field: "vehicle_value"
+        condition: "greater_than"
+        trigger_value: 50000
+        target_product: "umbrella_insurance"
+        relevance_score: 70
+        seed_message: "With a vehicle of this value, you might want to consider umbrella coverage for extra protection."
+
+# =============================================================================
+# END OF PART 1 - CONTINUE TO PART 2 FOR:
+# - Home Insurance Fields (comprehensive)
+# - Life Insurance Fields (comprehensive)
+# - Commercial Insurance Fields
+# - Umbrella Insurance Fields
+# =============================================================================

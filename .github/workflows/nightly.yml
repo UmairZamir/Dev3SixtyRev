@@ -1,0 +1,181 @@
+# =============================================================================
+# Nightly Quality Scan
+# =============================================================================
+# Runs comprehensive checks that take too long for PR checks.
+# Sends report to team Slack/Email.
+
+name: Nightly Quality Scan
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # 6 AM UTC daily
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  # ===========================================================================
+  # Full Codebase Analysis
+  # ===========================================================================
+  full-analysis:
+    name: 📊 Full Codebase Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for analysis
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+      
+      - name: Run ALL guards on entire codebase
+        run: |
+          echo "## 📊 Full Guards Analysis" >> $GITHUB_STEP_SUMMARY
+          python -c "
+          from sdk.guards import get_guard_registry
+          from pathlib import Path
+          import json
+          
+          registry = get_guard_registry()
+          
+          results = {
+              'total_files': 0,
+              'total_errors': 0,
+              'total_warnings': 0,
+              'by_guard': {},
+              'by_category': {},
+              'worst_files': []
+          }
+          
+          file_violations = []
+          
+          for f in Path('.').rglob('*.py'):
+              if '.venv' in str(f) or '__pycache__' in str(f):
+                  continue
+              
+              try:
+                  result = registry.run_on_file(f)
+                  results['total_files'] += 1
+                  
+                  errors = result.error_count
+                  warnings = result.warning_count
+                  
+                  results['total_errors'] += errors
+                  results['total_warnings'] += warnings
+                  
+                  if errors + warnings > 0:
+                      file_violations.append({
+                          'file': str(f),
+                          'errors': errors,
+                          'warnings': warnings,
+                          'total': errors + warnings
+                      })
+                  
+                  for v in result.violations:
+                      guard = v.guard_name
+                      cat = v.category.value
+                      
+                      results['by_guard'][guard] = results['by_guard'].get(guard, 0) + 1
+                      results['by_category'][cat] = results['by_category'].get(cat, 0) + 1
+              except Exception as e:
+                  print(f'Error processing {f}: {e}')
+          
+          # Sort worst files
+          file_violations.sort(key=lambda x: x['total'], reverse=True)
+          results['worst_files'] = file_violations[:10]
+          
+          # Print summary
+          print(f'Files analyzed: {results[\"total_files\"]}')
+          print(f'Total errors: {results[\"total_errors\"]}')
+          print(f'Total warnings: {results[\"total_warnings\"]}')
+          print()
+          print('By Guard:')
+          for guard, count in sorted(results['by_guard'].items(), key=lambda x: -x[1]):
+              print(f'  {guard}: {count}')
+          print()
+          print('Worst Files:')
+          for f in results['worst_files'][:5]:
+              print(f'  {f[\"file\"]}: {f[\"errors\"]} errors, {f[\"warnings\"]} warnings')
+          
+          # Save for artifact
+          with open('quality-report.json', 'w') as f:
+              json.dump(results, f, indent=2)
+          "
+      
+      - name: Generate quality trend
+        run: |
+          echo "## 📈 Quality Metrics" >> $GITHUB_STEP_SUMMARY
+          cat quality-report.json >> $GITHUB_STEP_SUMMARY
+      
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-quality-report
+          path: quality-report.json
+
+  # ===========================================================================
+  # Dependency Audit
+  # ===========================================================================
+  dependency-audit:
+    name: 🔍 Dependency Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install audit tools
+        run: pip install pip-audit safety
+      
+      - name: Check for vulnerable dependencies
+        run: |
+          echo "## 🔒 Dependency Audit" >> $GITHUB_STEP_SUMMARY
+          pip-audit --format json > audit-report.json || true
+          pip-audit || true
+      
+      - name: Check for outdated packages
+        run: |
+          pip list --outdated --format json > outdated.json || true
+          echo "### Outdated Packages" >> $GITHUB_STEP_SUMMARY
+          cat outdated.json >> $GITHUB_STEP_SUMMARY
+
+  # ===========================================================================
+  # Code Complexity Analysis
+  # ===========================================================================
+  complexity-analysis:
+    name: 📐 Complexity Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install radon
+        run: pip install radon
+      
+      - name: Cyclomatic complexity
+        run: |
+          echo "## 📐 Complexity Report" >> $GITHUB_STEP_SUMMARY
+          echo "### High Complexity Functions (CC > 10)" >> $GITHUB_STEP_SUMMARY
+          radon cc sdk/ -a -s --min C >> $GITHUB_STEP_SUMMARY || true
+      
+      - name: Maintainability index
+        run: |
+          echo "### Maintainability Index" >> $GITHUB_STEP_SUMMARY
+          radon mi sdk/ -s >> $GITHUB_STEP_SUMMARY || true
